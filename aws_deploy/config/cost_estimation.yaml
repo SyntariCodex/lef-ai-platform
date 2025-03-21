@@ -1,0 +1,73 @@
+monthly_costs:
+  support_plan:
+    type: "Developer"
+    base_cost: 29.00
+    features:
+      - "Business hours email access"
+      - "12-hour response time"
+      - "Basic Trusted Advisor"
+
+  compute:
+    lambda:
+      invocations_per_month: 500000  # Reduced for development phase
+      avg_duration_ms: 500
+      memory_mb: 512
+      estimated_cost: 12.50
+
+  storage:
+    dynamodb:
+      tables: 10
+      storage_gb: 10  # Reduced for initial testing
+      monthly_requests: 500000  # Reduced for development phase
+      estimated_cost: 35.00
+    
+    s3:
+      storage_gb: 50  # Reduced for initial testing
+      requests_per_month: 50000
+      cross_region_replication: true
+      estimated_cost: 5.00
+
+  streaming:
+    kinesis:
+      shards: 1
+      retention_hours: 24
+      estimated_cost: 15.00
+    
+    sqs:
+      queues: 2
+      messages_per_month: 500000  # Reduced for development phase
+      estimated_cost: 2.50
+
+  monitoring:
+    cloudwatch:
+      log_retention_days: 30
+      custom_metrics: 10  # Reduced for initial testing
+      alarms: 5
+      estimated_cost: 15.00
+
+  backup:
+    cross_region:
+      regions: 2
+      data_transfer_gb: 25  # Reduced for initial testing
+      storage_gb: 50
+      estimated_cost: 25.00
+
+  total_estimated_monthly:
+    min_cost: 120.00  # Minimum expected cost
+    max_cost: 180.00  # Maximum expected cost with buffer
+    
+notes:
+  - "Costs are estimates and may vary based on actual usage"
+  - "Free tier benefits will help reduce initial costs"
+  - "Prices based on us-west-2 region"
+  - "Plan to monitor usage and adjust resources as needed"
+  - "Consider upgrading to Business Support when moving to production"
+
+optimization_recommendations:
+  - "Leverage AWS Free Tier benefits during development"
+  - "Start with minimal capacity and scale up as needed"
+  - "Monitor usage patterns to optimize resource allocation"
+  - "Use S3 storage classes for infrequent access"
+  - "Set up CloudWatch alarms for cost monitoring"
+  - "Consider upgrading support plan when moving to production"
+  - "Use development environment for testing before scaling" 

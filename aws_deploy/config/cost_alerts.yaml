@@ -1,0 +1,79 @@
+budget_alerts:
+  monthly_budget:
+    amount: 150.00  # Set below our max estimate
+    threshold_alerts:
+      - percentage: 50  # Alert at $75 spent
+        notification: "email"
+      - percentage: 75  # Alert at $112.50 spent
+        notification: "email"
+      - percentage: 90  # Alert at $135 spent
+        notification: "email+sns"
+      - percentage: 100  # Alert at $150 spent
+        notification: "email+sns+lambda_shutdown"  # Optional automatic resource scaling
+
+resource_limits:
+  lambda:
+    max_concurrent_executions: 100
+    max_memory: 512
+    timeout_seconds: 60
+    cost_threshold_usd: 15.00
+
+  dynamodb:
+    max_read_capacity_units: 50
+    max_write_capacity_units: 50
+    max_storage_gb: 10
+    cost_threshold_usd: 40.00
+
+  s3:
+    max_storage_gb: 50
+    lifecycle_rules:
+      - transition_to_ia_days: 30
+      - transition_to_glacier_days: 90
+    cost_threshold_usd: 10.00
+
+  kinesis:
+    max_shards: 1
+    retention_hours: 24
+    cost_threshold_usd: 20.00
+
+  cloudwatch:
+    log_retention_days: 30
+    max_custom_metrics: 10
+    max_alarms: 5
+    cost_threshold_usd: 20.00
+
+automatic_actions:
+  threshold_exceeded:
+    - action: "notify_admin"
+    - action: "scale_down_resources"
+    - action: "pause_non_critical"
+    
+  critical_threshold:
+    - action: "emergency_notification"
+    - action: "stop_new_resources"
+    - action: "preserve_critical_only"
+
+monitoring_schedule:
+  cost_check_frequency: "hourly"
+  resource_check_frequency: "15_minutes"
+  report_generation: "daily"
+
+free_tier_tracking:
+  enabled: true
+  services:
+    - "lambda"
+    - "dynamodb"
+    - "s3"
+    - "cloudwatch"
+  alert_at_percentage: 80  # Alert when 80% of free tier is used
+
+notifications:
+  email: "YOUR_EMAIL"  # To be replaced with actual email
+  sns_topic: "cost-alerts"
+  slack_webhook: "optional"
+
+reports:
+  daily_cost_summary: true
+  resource_utilization: true
+  free_tier_usage: true
+  cost_optimization_suggestions: true 
