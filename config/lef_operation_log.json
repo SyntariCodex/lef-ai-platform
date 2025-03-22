@@ -1,0 +1,22 @@
+{
+  "start_time": "2025-03-19T16:23:19.820115",
+  "end_time": "2025-03-19T16:29:19.820115",
+  "summary": {
+    "duration_hours": 0.10010657674736446,
+    "state_changes": 1,
+    "ethics_checks_processed": 0,
+    "critical_alerts_processed": 0,
+    "final_state": {
+      "timestamp": 1742426960.203819,
+      "governance": {
+        "timestamp": 1742426960.203843,
+        "state": {
+          "awareness_depth": 1.0,
+          "stability_index": 0.7,
+          "coherence_level": 0.8,
+          "resonance_field": 0.5,
+          "evolution_stage": "initial",
+          "last_calibration": 1742426599.820092
+        },
+        "domain_metrics": {
+          
