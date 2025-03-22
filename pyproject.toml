@@ -1,6 +1,33 @@
 [build-system]
-requires = ["setuptools>=45", "wheel"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "lef"
+version = "0.1.0"
+authors = [
+    { name="LEF Development Team" },
+]
+description = "Learning & Evolution Framework"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "rich>=10.0.0",
+    "click>=8.0.0",
+    "pyyaml>=6.0.0",
+]
+
+[project.scripts]
+lef-monitor = "lef.cli.live_monitor:monitor"
+lef-progress = "lef.cli.progress_cli:cli"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["lef*"]
 
 [tool.black]
 line-length = 100

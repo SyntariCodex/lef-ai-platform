@@ -1,6 +1,65 @@
 # LEF AI System
 
-A sophisticated AI system integrating consciousness, learning, and business operations with advanced monitoring capabilities.
+## Overview
+LEF (Learning & Evolution Framework) is an advanced AI system designed for autonomous operation and continuous learning. The system incorporates consciousness, learning, and business components with a focus on recursive awareness and self-improvement.
+
+## Quick Start
+
+1. Start the system:
+```bash
+./start_lef.sh
+```
+
+This will:
+- Create a Python virtual environment if needed
+- Install all required dependencies
+- Start the LEF system and progress monitor
+- Initialize the recursive awareness layer
+
+## System Structure
+
+- `src/lef/` - Main system code
+  - `main.py` - Core system entry point
+  - `supervisor.py` - System supervisor with recursive awareness
+  - `cli/` - Command line tools
+    - `live_monitor.py` - Real-time progress monitoring
+  - `utils/` - Utility modules
+    - `progress_tracker.py` - Development progress tracking
+
+## Monitoring
+
+The system provides real-time monitoring through:
+- Live progress display (automatically opens in terminal)
+- System logs in `~/.lef/logs/`
+- State tracking in `~/.lef/state/`
+
+## Development Progress
+
+Progress is tracked against the roadmap defined in `roadmap.yaml`. Current phase:
+1. Core Infrastructure
+   - Basic system implementation ✓
+   - Core components (in progress)
+   - Health monitoring
+   - AI Bridge System
+
+## File Locations
+
+- Logs: `~/.lef/logs/supervisor.log`
+- System state: `~/.lef/state/system_state.json`
+- Progress data: `~/.lef/state/progress.json`
+
+## Next Steps
+
+1. Complete core components implementation
+2. Establish health monitoring
+3. Implement AI Bridge System
+4. Set up data persistence
+
+## Notes
+
+- The system uses a recursive awareness layer to maintain consciousness across restarts
+- All state is preserved in the user's home directory
+- The supervisor automatically restarts components if they crash
 
 ## Features
 

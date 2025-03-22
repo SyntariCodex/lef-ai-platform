@@ -1,0 +1,57 @@
+# AI Bridge Configuration
+
+# Connection Settings
+connections:
+  claude:
+    endpoint: "wss://claude-api-endpoint/v1/ws"
+    api_key: "${CLAUDE_API_KEY}"
+    timeout: 30
+    retry_attempts: 3
+    
+  grok:
+    endpoint: "https://api.grok.x/v1"
+    api_key: "${GROK_API_KEY}"
+    timeout: 30
+    retry_attempts: 3
+    
+  novaeus:
+    endpoint: "wss://novaeus-endpoint/v1/ws"
+    api_key: "${NOVAEUS_API_KEY}"
+    timeout: 30
+    retry_attempts: 3
+
+# Message Queue Settings
+message_queue:
+  max_size: 1000
+  retention_period: 3600  # 1 hour in seconds
+  priority_levels: 5
+
+# Communication Rules
+rules:
+  broadcast_interval: 300  # 5 minutes
+  state_sync_interval: 60  # 1 minute
+  max_retry_delay: 300    # 5 minutes
+  backoff_factor: 2
+
+# Security
+security:
+  encryption_enabled: true
+  signature_verification: true
+  rate_limiting:
+    max_requests: 100
+    window_seconds: 60
+
+# Logging
+logging:
+  level: INFO
+  file: "logs/ai_bridge.log"
+  rotation: "1 day"
+  retention: "30 days"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# State Management
+state_management:
+  persistence_enabled: true
+  storage_path: "data/ai_bridge_state"
+  backup_interval: 3600  # 1 hour
+  max_history: 1000 

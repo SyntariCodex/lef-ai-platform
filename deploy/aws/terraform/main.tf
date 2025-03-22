@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 4.0"
+      version = "~> 5.0"
     }
   }
 }
@@ -49,22 +49,22 @@ resource "aws_ecs_cluster" "main" {
 # ECS Task Definition
 resource "aws_ecs_task_definition" "lef" {
   family                   = "${var.project_name}-task"
-  network_mode            = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                     = var.task_cpu
-  memory                  = var.task_memory
+  network_mode            = "awsvpc"
+  cpu                     = var.container_cpu
+  memory                  = var.container_memory
   execution_role_arn      = aws_iam_role.ecs_execution_role.arn
   task_role_arn           = aws_iam_role.ecs_task_role.arn
   
   container_definitions = jsonencode([
     {
-      name  = "${var.project_name}-container"
-      image = "${aws_ecr_repository.main.repository_url}:latest"
+      name  = var.project_name
+      image = "${aws_ecr_repository.lef.repository_url}:latest"
       
       portMappings = [
         {
-          containerPort = 8000
-          hostPort      = 8000
+          containerPort = var.container_port
+          hostPort      = var.container_port
           protocol      = "tcp"
         }
       ]
@@ -73,17 +73,6 @@ resource "aws_ecs_task_definition" "lef" {
         {
           name  = "ENVIRONMENT"
           value = var.environment
-        },
-        {
-          name  = "AWS_REGION"
-          value = var.aws_region
-        }
-      ]
-      
-      secrets = [
-        {
-          name      = "LEF_ARCHIVE_PATH"
-          valueFrom = aws_ssm_parameter.archive_path.arn
         }
       ]
       
@@ -109,22 +98,21 @@ resource "aws_ecs_service" "lef" {
   name            = "${var.project_name}-service"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.lef.arn
-  desired_count   = var.service_desired_count
+  desired_count   = var.desired_count
   launch_type     = "FARGATE"
   
   network_configuration {
-    subnets          = module.vpc.private_subnet_ids
-    security_groups  = [aws_security_group.ecs_tasks.id]
-    assign_public_ip = false
+    subnets         = module.vpc.private_subnets
+    security_groups = [aws_security_group.ecs_tasks.id]
   }
   
   load_balancer {
     target_group_arn = aws_lb_target_group.lef.arn
-    container_name   = "${var.project_name}-container"
-    container_port   = 8000
+    container_name   = var.project_name
+    container_port   = var.container_port
   }
   
-  depends_on = [aws_lb_listener.lef]
+  depends_on = [aws_lb_listener.http]
   
   tags = {
     Environment = var.environment
@@ -138,32 +126,7 @@ resource "aws_lb" "lef" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
-  
-  subnets = module.vpc.public_subnet_ids
-  
-  tags = {
-    Environment = var.environment
-    Project     = var.project_name
-  }
-}
-
-resource "aws_lb_target_group" "lef" {
-  name        = "${var.project_name}-tg"
-  port        = 8000
-  protocol    = "HTTP"
-  vpc_id      = module.vpc.vpc_id
-  target_type = "ip"
-  
-  health_check {
-    enabled             = true
-    healthy_threshold   = 2
-    interval            = 30
-    timeout             = 5
-    path                = "/health"
-    port                = "traffic-port"
-    protocol            = "HTTP"
-    unhealthy_threshold = 2
-  }
+  subnets           = module.vpc.public_subnets
   
   tags = {
     Environment = var.environment
@@ -171,15 +134,36 @@ resource "aws_lb_target_group" "lef" {
   }
 }
 
-resource "aws_lb_listener" "lef" {
+# Load Balancer Listener
+resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.lef.arn
   port              = "80"
-  
+  protocol          = "HTTP"
+
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.lef.arn
   }
-  
+}
+
+# Target Group
+resource "aws_lb_target_group" "lef" {
+  name        = "${var.project_name}-target-group"
+  port        = var.container_port
+  protocol    = "HTTP"
+  vpc_id      = module.vpc.vpc_id
+  target_type = "ip"
+
+  health_check {
+    healthy_threshold   = "3"
+    interval           = "30"
+    protocol           = "HTTP"
+    matcher            = "200"
+    timeout            = "3"
+    path              = "/health"
+    unhealthy_threshold = "2"
+  }
+
   tags = {
     Environment = var.environment
     Project     = var.project_name
@@ -187,7 +171,7 @@ resource "aws_lb_listener" "lef" {
 }
 
 # ECR Repository
-resource "aws_ecr_repository" "main" {
+resource "aws_ecr_repository" "lef" {
   name = "${var.project_name}-repo"
   
   image_scanning_configuration {
@@ -200,51 +184,52 @@ resource "aws_ecr_repository" "main" {
   }
 }
 
-# Security Groups
+# Security Group for ALB
 resource "aws_security_group" "alb" {
   name        = "${var.project_name}-alb-sg"
   description = "Security group for ALB"
   vpc_id      = module.vpc.vpc_id
-  
+
   ingress {
+    protocol    = "tcp"
     from_port   = 80
     to_port     = 80
-    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   egress {
+    protocol    = "-1"
     from_port   = 0
     to_port     = 0
-    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   tags = {
     Environment = var.environment
     Project     = var.project_name
   }
 }
 
+# Security Group for ECS Tasks
 resource "aws_security_group" "ecs_tasks" {
   name        = "${var.project_name}-ecs-tasks-sg"
   description = "Security group for ECS tasks"
   vpc_id      = module.vpc.vpc_id
-  
+
   ingress {
-    from_port       = 8000
-    to_port         = 8000
     protocol        = "tcp"
+    from_port       = var.container_port
+    to_port         = var.container_port
     security_groups = [aws_security_group.alb.id]
   }
-  
+
   egress {
+    protocol    = "-1"
     from_port   = 0
     to_port     = 0
-    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   tags = {
     Environment = var.environment
     Project     = var.project_name

@@ -1,3 +1,18 @@
+output "vpc_id" {
+  description = "The ID of the VPC"
+  value       = module.vpc.vpc_id
+}
+
+output "private_subnets" {
+  description = "List of IDs of private subnets"
+  value       = module.vpc.private_subnets
+}
+
+output "public_subnets" {
+  description = "List of IDs of public subnets"
+  value       = module.vpc.public_subnets
+}
+
 output "alb_dns_name" {
   description = "The DNS name of the load balancer"
   value       = aws_lb.lef.dns_name
@@ -15,22 +30,7 @@ output "ecs_service_name" {
 
 output "ecr_repository_url" {
   description = "The URL of the ECR repository"
-  value       = aws_ecr_repository.main.repository_url
-}
-
-output "vpc_id" {
-  description = "The ID of the VPC"
-  value       = module.vpc.vpc_id
-}
-
-output "private_subnet_ids" {
-  description = "The IDs of the private subnets"
-  value       = module.vpc.private_subnet_ids
-}
-
-output "public_subnet_ids" {
-  description = "The IDs of the public subnets"
-  value       = module.vpc.public_subnet_ids
+  value       = aws_ecr_repository.lef.repository_url
 }
 
 output "cloudwatch_log_group" {
