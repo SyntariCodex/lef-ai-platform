@@ -1,0 +1,30 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "sagemaker:CreateModel",
+                "sagemaker:CreateEndpointConfig",
+                "sagemaker:CreateEndpoint",
+                "sagemaker:DeleteModel",
+                "sagemaker:DeleteEndpointConfig",
+                "sagemaker:DeleteEndpoint",
+                "sagemaker:DescribeModel",
+                "sagemaker:DescribeEndpointConfig",
+                "sagemaker:DescribeEndpoint",
+                "sagemaker:InvokeEndpoint",
+                "sagemaker:ListTags",
+                "sagemaker:AddTags",
+                "sagemaker:DeleteTags",
+                "iam:PassRole"
+            ],
+            "Resource": [
+                "arn:aws:sagemaker:us-east-1:212199569682:model/*",
+                "arn:aws:sagemaker:us-east-1:212199569682:endpoint/*",
+                "arn:aws:sagemaker:us-east-1:212199569682:endpoint-config/*",
+                "arn:aws:iam::212199569682:role/*"
+            ]
+        }
+    ]
+} 

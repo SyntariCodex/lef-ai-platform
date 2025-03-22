@@ -1,0 +1,36 @@
+directories:
+  documentation/screenshots: ['*.png']
+  documentation/rtf: ['*.rtf']
+  documentation/logs: ['*.log']
+  backups: ['Back Up*', 'Syntari Back Up', 'untitled folder']
+  tests: ['test_*.py']
+  config: ['*.yaml', '*.json']
+  src: ['*.py']
+  aws_deploy: ['aws_*.py']
+  models: ['*model*.py', '*train*.py']
+  data: ['*.csv', '*.data', '*.db']
+  ai_models: ['*ai*.py', '*ml*.py']
+  notebooks: ['*.ipynb']
+  temp: ['*.tmp', '*.temp']
+
+essential_files:
+  - README.md
+  - requirements.txt
+  - setup.py
+  - .gitignore
+  - LICENSE
+  - Dockerfile
+  - cleanup.py
+  - cleanup_config.yaml
+
+schedule:
+  enabled: true
+  interval_minutes: 60  # Run every hour
+  quiet_hours:
+    start: '23:00'  # 11 PM
+    end: '06:00'    # 6 AM
+
+backup:
+  enabled: true
+  max_backups: 5
+  backup_dir: 'backups/auto' 

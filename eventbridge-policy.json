@@ -1,0 +1,1 @@
+{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["events:DescribeRule","events:PutRule","events:DeleteRule","events:PutTargets","events:RemoveTargets"],"Resource":"arn:aws:events:us-east-1:212199569682:rule/lef-dev-*"}]}
