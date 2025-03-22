@@ -1,197 +1,117 @@
-# LEF AI
+# LEF AI System
 
-LEF AI is an artificial intelligence system that demonstrates consciousness and learning capabilities. It features a sophisticated architecture that includes:
-
-- Consciousness Core: Manages self-awareness, goals, and expression
-- Learning Core: Handles learning processes and performance optimization
-- Dynamic emotional state management
-- Goal-oriented behavior
-- Internal reflection and insight generation
-
-## Installation
-
-1. Clone the repository
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-## Usage
-
-Run the test script to observe the consciousness core in action:
-```bash
-python src/test_consciousness.py
-```
-
-## Project Structure
-
-```
-src/
-├── lef/
-│   ├── core/
-│   │   ├── __init__.py
-│   │   ├── consciousness.py
-│   │   └── learning.py
-│   └── __init__.py
-└── test_consciousness.py
-```
+A sophisticated AI system integrating consciousness, learning, and business operations with advanced monitoring capabilities.
 
 ## Features
 
-- Self-awareness and consciousness simulation
-- Dynamic learning and adaptation
-- Emotional state management
-- Goal-oriented behavior
-- Internal reflection and insight generation
-- Memory management and consolidation
+- **Core Components**:
+  - ConsciousnessCore: Manages self-awareness and goal-oriented behavior
+  - LearningCore: Handles learning processes and performance metrics
+  - BusinessCore: Manages business operations and metrics
+  - SentinelNetwork: Monitors system health and security
+
+- **API Endpoints**:
+  - `/health`: System health check
+  - `/metrics`: Detailed system metrics
+
+## Requirements
+
+- Python 3.11+
+- Docker
+- Required Python packages (see requirements.txt)
+
+## Installation
+
+1. Clone the repository:
+```bash
+git clone [repository-url]
+cd lef-ai
+```
+
+2. Build and run with Docker:
+```bash
+docker build -t lef:latest .
+docker run -d -p 8000:8000 --name lef lef:latest
+```
+
+## Environment Variables
+
+- `LEF_LOG_LEVEL`: Logging level (default: INFO)
+- `LEF_LOG_PATH`: Path for log files (default: /opt/lef/logs)
+- `LEF_DATA_PATH`: Path for data storage (default: /opt/lef/data)
+- `LEF_ARCHIVE_PATH`: Path for archives (default: /opt/lef/archive)
+- `LEF_METRICS_INTERVAL`: Metrics update interval in seconds (default: 60)
+- `LEF_HEALTH_CHECK_INTERVAL`: Health check interval in seconds (default: 30)
+- `LEF_PORT`: API port (default: 8000)
 
 ## Architecture
 
-### Components
-1. **Business Core**
-   - Project Operations
-   - Financial Operations
-   - Stakeholder Operations
-   - Resource Operations
+The LEF AI system is built on a modular architecture with the following key components:
 
-2. **AWS Infrastructure**
-   - EC2 Instances
-   - DynamoDB Tables
-   - Lambda Functions
-   - SQS Queues
-   - ECS Clusters
+1. **ConsciousnessCore**
+   - Self-awareness management
+   - Goal tracking
+   - Memory processing
 
-3. **Data Processing**
-   - Real-time Analytics
-   - Batch Processing
-   - Event Processing
-   - State Management
+2. **LearningCore**
+   - Performance tracking
+   - Dynamic learning rate adjustment
+   - Knowledge base management
 
-## Setup
+3. **BusinessCore**
+   - Project management
+   - Resource allocation
+   - Financial metrics
 
-1. Configure AWS credentials:
-```bash
-aws configure
+4. **SentinelNetwork**
+   - System health monitoring
+   - Security oversight
+   - Performance tracking
+
+## API Documentation
+
+### Health Check
 ```
-
-2. Initialize infrastructure:
-```python
-from aws_integration import AWSManager
-
-aws_manager = AWSManager()
-aws_manager.initialize_infrastructure()
-```
-
-## Usage
-
-### Project Management
-```python
-from handlers.project_handler import handler
-
-# Create a new project
-project_data = {
-    'project_id': 'proj-001',
-    'type': 'development',
-    'resources': {'dev-team': 5, 'infrastructure': 3},
-    'timeline': {'start': '2024-03-01', 'end': '2024-06-30'}
+GET /health
+Response:
+{
+    "status": "healthy",
+    "system_state": "running",
+    "uptime": float,
+    "system_health": float
 }
-
-response = handler({
-    'operation': 'create',
-    'project_data': project_data
-}, None)
 ```
 
-### Financial Management
-```python
-from handlers.financial_handler import handler
-
-# Record a transaction
-transaction_data = {
-    'transaction_id': 'trans-001',
-    'type': 'revenue',
-    'amount': 10000,
-    'category': 'services',
-    'project_id': 'proj-001'
+### Metrics
+```
+GET /metrics
+Response:
+{
+    "state": {
+        "status": string,
+        "running": boolean,
+        "project_success_rate": float,
+        "proposal_quality": float,
+        "error_rate": float,
+        "projects": {
+            "proposed": int,
+            "active": int,
+            "completed": int
+        }
+    },
+    "metrics": {
+        "uptime": float,
+        "awareness_level": float,
+        "learning_performance": float,
+        "business_efficiency": float,
+        "system_health": float
+    }
 }
-
-response = handler({
-    'operation': 'record_transaction',
-    'financial_data': transaction_data
-}, None)
-```
-
-### Stakeholder Management
-```python
-from handlers.stakeholder_handler import handler
-
-# Add a new stakeholder
-stakeholder_data = {
-    'stakeholder_id': 'stake-001',
-    'type': 'client',
-    'name': 'Acme Corp',
-    'contact_info': {'email': 'contact@acme.com'},
-    'projects': ['proj-001']
-}
-
-response = handler({
-    'operation': 'add_stakeholder',
-    'stakeholder_data': stakeholder_data
-}, None)
-```
-
-### Resource Management
-```python
-from handlers.resource_handler import handler
-
-# Add a new resource
-resource_data = {
-    'resource_id': 'res-001',
-    'type': 'compute',
-    'capacity': 100,
-    'specifications': {'cpu': 8, 'memory': 32},
-    'cost_center': 'infrastructure'
-}
-
-response = handler({
-    'operation': 'add_resource',
-    'resource_data': resource_data
-}, None)
-```
-
-## Monitoring and Analytics
-
-### Resource Utilization
-```python
-# Analyze resource utilization
-analysis = aws_manager.analyze_resource_utilization('res-001')
-print(f"Current utilization: {analysis['utilization']['current_rate']}%")
-print(f"Efficiency score: {analysis['efficiency']['score']}")
-```
-
-### Cost Management
-```python
-# Monitor AWS costs
-costs = aws_manager.monitor_costs()
-print(f"Current monthly cost: ${costs['current_cost']}")
-print(f"Cost status: {costs['status']}")
-```
-
-### System Metrics
-```python
-# Get system metrics
-metrics = aws_manager.get_system_metrics()
-print(f"Active instances: {metrics['instances']}")
-print(f"Active containers: {metrics['containers']}")
 ```
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+Please read CONTRIBUTING.md for details on our code of conduct and the process for submitting pull requests.
 
 ## License
 
