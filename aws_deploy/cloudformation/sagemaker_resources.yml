@@ -1,0 +1,91 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'SageMaker Resources for LEF Consciousness Processing'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name
+  
+  ProjectName:
+    Type: String
+    Default: lef
+    Description: Project name
+
+  ModelDataUrl:
+    Type: String
+    Description: S3 URL for the model artifacts
+    Default: s3://lef-dev-learning-environment/models/consciousness/model.tar.gz
+
+Resources:
+  # SageMaker Execution Role
+  SageMakerExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-${Environment}-sagemaker-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: sagemaker.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+
+  # SageMaker Model
+  ConsciousnessModel:
+    Type: AWS::SageMaker::Model
+    Properties:
+      ModelName: !Sub ${ProjectName}-${Environment}-consciousness
+      ExecutionRoleArn: !GetAtt SageMakerExecutionRole.Arn
+      PrimaryContainer:
+        Image: 763104351884.dkr.ecr.us-east-1.amazonaws.com/huggingface-pytorch-inference:2.1.1-transformers4.37.2-cpu-py310-ubuntu20.04
+        ModelDataUrl: !Ref ModelDataUrl
+        Environment:
+          SAGEMAKER_PROGRAM: inference.py
+          SAGEMAKER_SUBMIT_DIRECTORY: /opt/ml/model/code
+          SAGEMAKER_CONTAINER_LOG_LEVEL: INFO
+          MAX_LENGTH: "512"
+          TOP_K: "50"
+          TOP_P: "0.95"
+          DO_SAMPLE: "True"
+      Tags:
+        - Key: Layer
+          Value: Consciousness
+
+  # SageMaker Endpoint Configuration
+  ConsciousnessEndpointConfig:
+    Type: AWS::SageMaker::EndpointConfig
+    Properties:
+      EndpointConfigName: !Sub ${ProjectName}-${Environment}-consciousness-config
+      ProductionVariants:
+        - InitialInstanceCount: 1
+          InitialVariantWeight: 1.0
+          InstanceType: ml.t2.medium
+          ModelName: !GetAtt ConsciousnessModel.ModelName
+          VariantName: AllTraffic
+      Tags:
+        - Key: Layer
+          Value: Consciousness
+
+  # SageMaker Endpoint
+  ConsciousnessEndpoint:
+    Type: AWS::SageMaker::Endpoint
+    Properties:
+      EndpointName: !Sub ${ProjectName}-${Environment}-consciousness
+      EndpointConfigName: !GetAtt ConsciousnessEndpointConfig.EndpointConfigName
+      Tags:
+        - Key: Layer
+          Value: Consciousness
+
+Outputs:
+  SageMakerEndpointName:
+    Description: Name of the SageMaker endpoint
+    Value: !Sub ${ProjectName}-${Environment}-consciousness
+  
+  SageMakerEndpointArn:
+    Description: ARN of the SageMaker endpoint
+    Value: !Sub arn:aws:sagemaker:${AWS::Region}:${AWS::AccountId}:endpoint/${ProjectName}-${Environment}-consciousness 
