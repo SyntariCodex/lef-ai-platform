@@ -1,12 +1,14 @@
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, List
 import time
 import uuid
 
 class BusinessCore:
-    """Core business operations component of the LEF system."""
+    """Core business component managing business operations and metrics."""
     
     def __init__(self):
+        """Initialize business core."""
         self.running = False
+        self.start_time = None
         self.current_state = {
             'efficiency': 0.7,
             'productivity': 0.7,
@@ -16,7 +18,12 @@ class BusinessCore:
             'start_time': None,
             'uptime': 0,
             'total_operations': 0,
-            'success_rate': 0.95
+            'success_rate': 0.95,
+            "revenue": 0.0,
+            "costs": 0.0,
+            "profit": 0.0,
+            "customer_satisfaction": 0.0,
+            "efficiency": 0.0
         }
         self.projects = {}
         self.resources = {}
@@ -28,16 +35,58 @@ class BusinessCore:
         }
         self.last_update = time.time()
         self.update_interval = 60  # Update every minute
+        self.operations = {
+            "active_projects": [],
+            "completed_projects": [],
+            "resources": {},
+            "staff": {}
+        }
         
-    def start(self):
-        """Start the business core operations."""
-        self.running = True
-        print("Business Core started")
-        
+    def start(self) -> bool:
+        """Start the business core."""
+        try:
+            self.running = True
+            self.start_time = time.time()
+            self.metrics['start_time'] = self.start_time
+            print("Business core started successfully")
+            return True
+        except Exception as e:
+            print(f"Error starting business core: {str(e)}")
+            return False
+            
     def stop(self):
-        """Stop the business core operations."""
-        self.running = False
-        print("Business Core stopped")
+        """Stop the business core."""
+        try:
+            self.running = False
+            print("Business core stopped successfully")
+        except Exception as e:
+            print(f"Error stopping business core: {str(e)}")
+            
+    def get_metrics(self) -> Dict[str, Any]:
+        """Get current business metrics."""
+        current_time = time.time()
+        uptime = current_time - self.start_time if self.start_time else 0
+        self.metrics['uptime'] = uptime
+        
+        # Update efficiency based on current state
+        self.metrics['efficiency'] = (
+            self.current_state['efficiency'] +
+            self.current_state['productivity'] +
+            self.current_state['resource_utilization']
+        ) / 3.0
+        
+        return {
+            "uptime": uptime,
+            "total_operations": self.metrics['total_operations'],
+            "success_rate": self.metrics['success_rate'],
+            "revenue": self.metrics['revenue'],
+            "costs": self.metrics['costs'],
+            "profit": self.metrics['profit'],
+            "customer_satisfaction": self.metrics['customer_satisfaction'],
+            "efficiency": self.metrics['efficiency'],
+            "active_projects": len(self.operations['active_projects']),
+            "completed_projects": len(self.operations['completed_projects'])
+        }
         
     def update(self):
         """Update the business core state if running."""
@@ -191,14 +240,3 @@ class BusinessCore:
         except Exception as e:
             print(f"Error resetting business core: {str(e)}")
             return False 
-
-    def get_metrics(self) -> Dict[str, Any]:
-        """Get current business metrics."""
-        return {
-            'efficiency': self.current_state['efficiency'],
-            'productivity': self.current_state['productivity'],
-            'resource_utilization': self.current_state['resource_utilization'],
-            'uptime': self.metrics['uptime'],
-            'total_operations': self.metrics['total_operations'],
-            'success_rate': self.metrics['success_rate']
-        } 

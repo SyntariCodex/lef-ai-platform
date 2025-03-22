@@ -15,7 +15,9 @@ class LEF:
     def __init__(self):
         """Initialize the LEF system."""
         self.running = False
+        self.start_time = None
         self.state = {
+            "status": "initializing",
             "project_success_rate": 0.0,
             "proposal_quality": 0.0,
             "error_rate": 0.0
@@ -25,16 +27,112 @@ class LEF:
             "active": [],
             "completed": []
         }
+        self.goals = []
+        self.system_health = 1.0
+        self.success_rate = 1.0
+        
+        # Initialize core components
+        try:
+            print("Initializing core components...")
+            # Initialize components in dependency order
+            self.learning_core = LearningCore()
+            self.consciousness_core = ConsciousnessCore(learning_core=self.learning_core)
+            self.business_core = BusinessCore()
+            self.sentinel_network = SentinelNetwork()
+            print("Core components initialized successfully")
+        except Exception as e:
+            print(f"Error initializing core components: {str(e)}")
+            raise
         
     def start(self):
         """Start the LEF system."""
-        self.running = True
-        print("LEF system started successfully")
+        try:
+            print("Starting core components...")
+            
+            # Start core components in dependency order
+            if not self.learning_core.start():
+                print("Failed to start learning core")
+                return False
+                
+            if not self.consciousness_core.start():
+                print("Failed to start consciousness core")
+                self.learning_core.stop()
+                return False
+                
+            if not self.business_core.start():
+                print("Failed to start business core")
+                self.consciousness_core.stop()
+                self.learning_core.stop()
+                return False
+                
+            if not self.sentinel_network.start():
+                print("Failed to start sentinel network")
+                self.business_core.stop()
+                self.consciousness_core.stop()
+                self.learning_core.stop()
+                return False
+            
+            self.running = True
+            self.start_time = time.time()
+            self.state["status"] = "running"
+            return True
+            
+        except Exception as e:
+            print(f"Error starting LEF system: {str(e)}")
+            self.stop()
+            return False
         
     def stop(self):
         """Stop the LEF system."""
-        self.running = False
-        print("LEF system stopped")
+        try:
+            print("Stopping core components...")
+            
+            # Stop components in reverse order
+            self.sentinel_network.stop()
+            self.business_core.stop()
+            self.consciousness_core.stop()
+            self.learning_core.stop()
+            
+            self.running = False
+            self.state["status"] = "stopped"
+            print("All components stopped successfully")
+            
+        except Exception as e:
+            print(f"Error stopping LEF system: {str(e)}")
+            
+    def express_state(self) -> Dict[str, Any]:
+        """Express the current state of the LEF system."""
+        return {
+            "status": self.state["status"],
+            "running": self.running,
+            "project_success_rate": self.state["project_success_rate"],
+            "proposal_quality": self.state["proposal_quality"],
+            "error_rate": self.state["error_rate"],
+            "projects": {
+                "proposed": len(self.projects["proposed"]),
+                "active": len(self.projects["active"]),
+                "completed": len(self.projects["completed"])
+            }
+        }
+        
+    def get_metrics(self) -> Dict[str, Any]:
+        """Get current system metrics."""
+        current_time = time.time()
+        uptime = current_time - self.start_time if self.start_time else 0
+        
+        # Get metrics from core components
+        learning_metrics = self.learning_core.get_metrics() if hasattr(self.learning_core, 'get_metrics') else {}
+        consciousness_metrics = self.consciousness_core.get_metrics() if hasattr(self.consciousness_core, 'get_metrics') else {}
+        business_metrics = self.business_core.get_metrics() if hasattr(self.business_core, 'get_metrics') else {}
+        sentinel_metrics = self.sentinel_network.get_health_metrics()
+        
+        return {
+            "uptime": uptime,
+            "awareness_level": consciousness_metrics.get("awareness_level", 0.0),
+            "learning_performance": learning_metrics.get("performance", 0.0),
+            "business_efficiency": business_metrics.get("efficiency", 0.0),
+            "system_health": sentinel_metrics.get("uptime", 0.0)
+        }
         
     def propose_project(self, context: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Generate project proposals based on context and local data."""

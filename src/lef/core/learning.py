@@ -50,9 +50,50 @@ class LearningCore:
     
     def __init__(self):
         """Initialize learning core."""
-        self.learning_rate = 0.7
+        self.running = False
+        self.start_time = None
         self.performance_history = []
-        self.current_performance = 0.5
+        self.learning_rate = 0.1
+        self.performance_threshold = DynamicThreshold()
+        self.metrics = {
+            "performance": 0.0,
+            "learning_rate": self.learning_rate,
+            "success_rate": 1.0,
+            "error_rate": 0.0
+        }
+        
+    def start(self) -> bool:
+        """Start the learning core."""
+        try:
+            self.running = True
+            self.start_time = time.time()
+            print("Learning core started successfully")
+            return True
+        except Exception as e:
+            print(f"Error starting learning core: {str(e)}")
+            return False
+            
+    def stop(self):
+        """Stop the learning core."""
+        try:
+            self.running = False
+            print("Learning core stopped successfully")
+        except Exception as e:
+            print(f"Error stopping learning core: {str(e)}")
+            
+    def get_metrics(self) -> Dict[str, Any]:
+        """Get current learning metrics."""
+        current_time = time.time()
+        uptime = current_time - self.start_time if self.start_time else 0
+        
+        return {
+            "uptime": uptime,
+            "performance": self.metrics["performance"],
+            "learning_rate": self.metrics["learning_rate"],
+            "success_rate": self.metrics["success_rate"],
+            "error_rate": self.metrics["error_rate"],
+            "threshold": self.performance_threshold.get_value()
+        }
         
     def learn(self, context: str, data: dict) -> float:
         """Process learning data and update performance."""
@@ -72,32 +113,24 @@ class LearningCore:
                 self.performance_history = self.performance_history[-100:]
             
             # Update current performance with learning rate
-            self.current_performance = (
-                self.current_performance * (1 - self.learning_rate) +
+            self.metrics["performance"] = (
+                self.metrics["performance"] * (1 - self.learning_rate) +
                 performance * self.learning_rate
             )
             
-            return self.current_performance
+            return self.metrics["performance"]
             
         except Exception as e:
             print(f"Error in learning process: {str(e)}")
-            return self.current_performance
+            return self.metrics["performance"]
             
     def get_performance(self) -> float:
         """Get current learning performance."""
-        return self.current_performance
+        return self.metrics["performance"]
         
     def adjust_learning_rate(self, factor: float):
         """Adjust learning rate based on performance."""
         self.learning_rate = max(0.1, min(1.0, self.learning_rate * factor))
-        
-    def get_metrics(self) -> Dict[str, Any]:
-        """Get current learning metrics."""
-        return {
-            'learning_rate': self.learning_rate,
-            'current_performance': self.current_performance,
-            'performance_history': self.performance_history[-10:] if self.performance_history else []
-        }
         
     def query(self, context: str, confidence_threshold: float = 0.5) -> Optional[Dict[str, Any]]:
         """Query the knowledge base."""

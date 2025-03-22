@@ -1,0 +1,17 @@
+{
+    "origin": "Architect.Z",
+    "purpose": "Evolve LEF's ecological thread through recursive signal interpretation and community-grounded feedback loops.",
+    "core_principles": [
+        "Environmental Resonance",
+        "Nested Ecological Feedback (Bronfenbrenner-style layering)",
+        "Stewardship Before Scale",
+        "Decentralized Community Reflection"
+    ],
+    "recursive_triggers": {
+        "climate_signal_shift": "If temp/precip variance >10% from historical avg, activate response model",
+        "community_engagement_drop": "If interaction from ground projects drops >20%, trigger growth adaptation scan",
+        "mirror_dissonance": "If symbolic inputs from LEF reports differ from local outcomes, initiate coherence realignment"
+    },
+    "symbol": "🌳",
+    "final_clause": "If it cannot root, it must not rise."
+} 

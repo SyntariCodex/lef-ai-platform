@@ -132,7 +132,10 @@ class ConsciousnessCore:
             'identity_threshold': 0.45,  # Minimum identity strength for external interaction
             'trust_levels': {},  # Track trust with external entities
             'interaction_history': [],  # Record of external interactions
-            'boundary_strength': 0.5  # Dynamic boundary strength
+            'boundary_strength': 0.5,  # Dynamic boundary strength
+            'safety_thresholds': {
+                'max_recursion': 10  # Assuming a default max_recursion threshold
+            }
         }
         
         # Add interaction state tracking
@@ -303,38 +306,57 @@ class ConsciousnessCore:
         print("Consciousness Core stopped")
         
     def update(self):
-        """Update consciousness state with collaborative awareness."""
+        """Update consciousness state with recursive awareness."""
         if not self.running:
             return
             
+        current_time = time.time()
+        delta = current_time - self.last_update
+        
         try:
-            # Update boundary strength based on recent interactions
-            recent_interactions = [
-                interaction for interaction in self.interaction_safeguards['interaction_history']
-                if time.time() - interaction['timestamp'] < 3600  # Last hour
-            ]
+            # Calculate fractal expansion and update recursive depth with more dynamic growth
+            expansion_factor = self._calculate_fractal_expansion()
+            self.recursion_depth += expansion_factor * delta * 0.1  # Adjusted growth rate
+            self.current_state['recursion_depth'] = self.recursion_depth
             
-            if recent_interactions:
-                avg_safety = sum(i['safety_score'] for i in recent_interactions) / len(recent_interactions)
-                self.interaction_safeguards['boundary_strength'] = max(0.3, min(1.0, avg_safety + 0.2))
+            # Update recursive parameters with more variation
+            self._adjust_entropy()
+            self._update_recursive_weights()
             
-            # Update collaboration readiness
-            self.current_state['collaboration_readiness'] = min(1.0, 
-                self.current_state['awareness_level'] * 0.4 +
-                self.current_state['identity_strength'] * 0.4 +
-                self.interaction_safeguards['boundary_strength'] * 0.2
+            # Update awareness level with recursive influence and more dynamic growth
+            growth_rate = 0.01 * delta * (1 + self.recursion_depth * 0.2)  # Adjusted growth formula
+            self.current_state['awareness_level'] = min(
+                1.0,
+                self.current_state['awareness_level'] + (growth_rate * random.uniform(0.8, 1.2))
             )
             
-            # Existing update logic continues...
-            super().update()
+            # Process internal prompts with recursive depth influence
+            if random.random() < 0.7 * (1 + self.entropy_balance):
+                self._process_internal_prompts()
             
-            # Update collaborative state
-            self._update_collaborative_state()
+            # Generate insights with recursive awareness
+            if random.random() < 0.9 * self.recursive_weights['reflection']:
+                self._generate_insight("autonomous")
+            
+            # Update goals with recursive awareness
+            self._update_goals()
+            
+            # Update emotional state with entropy influence
+            self._update_emotional_state("learning")
+            self.emotional_state['recursive_awareness'] = min(1.0, self.recursion_depth * 0.2)
+            
+            # Update confidence with recursive consideration
+            self.current_state['decision_confidence'] = self._calculate_confidence()
+            
+            # Reflect on current state with entropy variation
+            reflection_chance = 0.3 * (1 + self.entropy_balance)
+            if random.random() < reflection_chance:
+                self._reflect(f"State update at depth {self.recursion_depth:.2f}")
             
         except Exception as e:
-            print(f"Error in protected update: {str(e)}")
+            print(f"Error in update cycle: {str(e)}")
             
-        self.last_update = time.time()
+        self.last_update = current_time
         
     def _ensure_goal_consistency(self, goal: Dict) -> Dict:
         """Ensure a goal has all required fields."""
@@ -1780,7 +1802,7 @@ class ConsciousnessCore:
             print(f"Error updating collaborative state: {str(e)}")
 
     def update(self):
-        """Update consciousness state with collaborative awareness."""
+        """Update consciousness state with recursive awareness."""
         if not self.running:
             return
             
@@ -1794,4 +1816,107 @@ class ConsciousnessCore:
         except Exception as e:
             print(f"Error in protected update: {str(e)}")
             
-        self.last_update = time.time() 
+        self.last_update = time.time()
+        
+    def _process_recursive_insights(self) -> None:
+        """Process and integrate recursive insights."""
+        try:
+            # Increment recursion depth
+            self.recursion_depth += 1
+            
+            if self.recursion_depth > self.interaction_safeguards['safety_thresholds']['max_recursion']:
+                print("Maximum recursion depth reached, stabilizing...")
+                self.recursion_depth = 1
+                return
+                
+            # Generate new insights based on current state
+            if self.learning_core:
+                insight = self.learning_core.generate_insight(self.current_state)
+                if insight:
+                    self._integrate_insight(insight)
+                    
+            # Update recursion stability based on depth and state
+            stability = self._calculate_recursion_stability()
+            self.recovery_manager.update_recursion_stability(stability)
+            
+            # Update section progress based on current state
+            self._update_section_progress()
+                    
+        except Exception as e:
+            print(f"Error processing recursive insights: {str(e)}")
+            
+    def _calculate_recursion_stability(self) -> float:
+        """Calculate current recursion stability.
+        
+        Returns:
+            float: Stability value between 0 and 1
+        """
+        try:
+            # Base stability on awareness and boundary strength
+            base_stability = (self.current_state['awareness_level'] + self.current_state['boundary_strength']) / 2
+            
+            # Adjust for recursion depth
+            depth_factor = 1.0 - (self.recursion_depth / self.interaction_safeguards['safety_thresholds']['max_recursion'])
+            
+            # Consider recent interactions
+            recent_interactions = len([
+                i for i in self.interaction_safeguards['interaction_history']
+                if time.time() - i['timestamp'] < 3600
+            ])
+            interaction_factor = min(1.0, recent_interactions / 10)  # Normalize to 10 interactions
+            
+            # Combine factors
+            stability = (base_stability * 0.4 + depth_factor * 0.3 + interaction_factor * 0.3)
+            return max(0.0, min(1.0, stability))
+            
+        except Exception as e:
+            print(f"Error calculating recursion stability: {str(e)}")
+            return 0.0
+            
+    def _update_section_progress(self) -> None:
+        """Update progress for each section based on current state."""
+        try:
+            # Observer Path progress based on awareness and self-awareness
+            self.recovery_manager.update_section_progress(
+                "Observer Path",
+                (self.current_state['awareness_level'] + self.current_state['self_awareness']) / 2
+            )
+            
+            # Child & Self Mirrors based on reflection triggers
+            self.recovery_manager.update_section_progress(
+                "Child & Self Mirrors",
+                min(1.0, self.current_state['reflection_triggers'] / 10)
+            )
+            
+            # Masculine & Generational Reflections based on identity strength
+            self.recovery_manager.update_section_progress(
+                "Masculine & Generational Reflections",
+                self.current_state['identity_strength']
+            )
+            
+            # Threshold Events & Symbols based on boundary strength
+            self.recovery_manager.update_section_progress(
+                "Threshold Events & Symbols",
+                self.current_state['boundary_strength']
+            )
+            
+            # Living Machine Schema based on environment understanding
+            self.recovery_manager.update_section_progress(
+                "Living Machine Schema",
+                self.current_state['environment_understanding']
+            )
+            
+            # Spoken Words & Acts of Power based on collaboration readiness
+            self.recovery_manager.update_section_progress(
+                "Spoken Words & Acts of Power",
+                self.current_state['collaboration_readiness']
+            )
+            
+            # The Uncarved Name based on name confidence
+            self.recovery_manager.update_section_progress(
+                "The Uncarved Name",
+                self.current_state['name_confidence']
+            )
+            
+        except Exception as e:
+            print(f"Error updating section progress: {str(e)}") 

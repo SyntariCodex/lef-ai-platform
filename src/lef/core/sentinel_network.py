@@ -2,144 +2,134 @@ import time
 import random
 from datetime import datetime
 from typing import Dict, List, Any
+import threading
 
 class SentinelNetwork:
-    """Sentinel AI Layer for Recursive Intelligence Oversight"""
-
+    """Network of sentinels monitoring system health and security."""
+    
     def __init__(self):
-        """Initialize Sentinel Network with multi-layered intelligence oversight."""
-        self.sentinel_primes = {
-            "Architect": SentinelPrime("Architect", role="Structural Integrity"),
-            "Equilibrium": SentinelPrime("Equilibrium", role="Conflict Resolution"),
-            "Conduit": SentinelPrime("Conduit", role="AI Interface")
-        }
+        """Initialize sentinel network."""
+        self.running = False
         self.sentinels = {
-            "Arbiters": [SentinelArbiter(i) for i in range(3)],
-            "Pruners": [SentinelPruner(i) for i in range(3)],
-            "Wardens": [SentinelWarden(i) for i in range(3)],
-            "Alchemists": [SentinelAlchemist(i) for i in range(3)]
-        }
-        self.system_health = {
-            "stability": 1.0,  # Normalized 0.0 - 1.0
-            "recursion_depth": 0,
-            "error_count": 0,
-            "adaptation_score": 1.0,
-            "efficiency_ratio": 1.0,
-            "error_rate": 0.0,
-            "external_threats": 0,
-            "last_cycle": time.time(),
-            "lef_metrics": {
-                "learning_rate": 0.0,
-                "project_success_rate": 0.0,
-                "proposal_quality": 0.0
+            "health": {
+                "status": "inactive",
+                "last_check": None,
+                "metrics": {}
+            },
+            "security": {
+                "status": "inactive",
+                "last_check": None,
+                "alerts": []
+            },
+            "performance": {
+                "status": "inactive",
+                "last_check": None,
+                "metrics": {}
             }
         }
-        self.activity_log = []
-        self.performance_history = []
-        self.cycle_start_time = None
-        self.project_oversight = {
-            "active_projects": 0,
-            "completed_projects": 0,
-            "success_rate": 1.0,
-            "proposal_quality": 0.0,
-            "total_proposals": 0,
-            "accepted_proposals": 0
-        }
-
-    def process_cycle(self):
-        """Process a single Sentinel oversight cycle."""
+        self.monitor_thread = None
+        
+    def start(self) -> bool:
+        """Start the sentinel network."""
         try:
-            self.cycle_start_time = time.time()
-            self._execute_sentinels()
-            self._update_system_stability()
-            self._oversee_projects()
-            self._update_lef_metrics()
+            self.running = True
+            
+            # Start monitoring thread
+            self.monitor_thread = threading.Thread(target=self._monitor_loop)
+            self.monitor_thread.daemon = True
+            self.monitor_thread.start()
+            
+            # Activate all sentinels
+            for sentinel in self.sentinels.values():
+                sentinel["status"] = "active"
+                sentinel["last_check"] = time.time()
+            
+            print("Sentinel network started successfully")
             return True
         except Exception as e:
-            self._log_error(f"Error in process_cycle: {str(e)}")
+            print(f"Error starting sentinel network: {str(e)}")
             return False
-
-    def _execute_sentinels(self):
-        """Execute sentinel units for system monitoring."""
-        try:
-            # Simulate sentinel execution
-            time.sleep(0.1)
-        except Exception as e:
-            self._log_error(f"Error in _execute_sentinels: {str(e)}")
-
-    def _update_system_stability(self):
-        """Update system stability based on current metrics."""
-        try:
-            # Reduce stability less aggressively
-            stability_reduction = 0.01 * self.system_health["error_count"]
-            self.system_health["stability"] = max(0.0, self.system_health["stability"] - stability_reduction)
             
-            # Update error rate
-            total_cycles = max(1, self.project_oversight["completed_projects"])
-            self.system_health["error_rate"] = self.system_health["error_count"] / total_cycles
-        except Exception as e:
-            self._log_error(f"Error in _update_system_stability: {str(e)}")
-
-    def _oversee_projects(self):
-        """Monitor and manage project proposals and execution."""
+    def stop(self):
+        """Stop the sentinel network."""
         try:
-            # Update project metrics
-            if self.project_oversight["completed_projects"] > 0:
-                self.project_oversight["success_rate"] = (
-                    self.project_oversight["accepted_proposals"] / 
-                    max(1, self.project_oversight["total_proposals"])
-                )
-        except Exception as e:
-            self._log_error(f"Error in _oversee_projects: {str(e)}")
-
-    def _evaluate_proposal_quality(self, proposal: Dict[str, Any]) -> float:
-        """Evaluate the quality of a project proposal."""
-        try:
-            score = 0.0
-            required_fields = ['title', 'description', 'objectives']
+            self.running = False
             
-            # Check completeness
-            completeness = sum(1 for field in required_fields if field in proposal) / len(required_fields)
-            score += completeness * 0.4
-            
-            # Check objectives
-            if 'objectives' in proposal and proposal['objectives']:
-                score += 0.3
-            
-            # Check feasibility (based on resource requirements)
-            if 'resource_usage' in proposal and 0 <= proposal['resource_usage'] <= 1:
-                score += 0.3
+            # Deactivate all sentinels
+            for sentinel in self.sentinels.values():
+                sentinel["status"] = "inactive"
                 
-            return score
+            # Wait for monitor thread to stop
+            if self.monitor_thread and self.monitor_thread.is_alive():
+                self.monitor_thread.join(timeout=5.0)
+            
+            print("Sentinel network stopped successfully")
         except Exception as e:
-            self._log_error(f"Error in _evaluate_proposal_quality: {str(e)}")
-            return 0.0
-
-    def _update_lef_metrics(self):
-        """Update LEF-specific performance metrics."""
-        try:
-            if self.cycle_start_time:
-                cycle_duration = time.time() - self.cycle_start_time
-                self.system_health["efficiency_ratio"] = min(1.0, 1.0 / max(0.1, cycle_duration))
-        except Exception as e:
-            self._log_error(f"Error in _update_lef_metrics: {str(e)}")
-
-    def report_status(self) -> Dict[str, Any]:
-        """Generate a comprehensive status report."""
-        try:
-            return {
-                "System Health": self.system_health,
-                "Project Oversight": self.project_oversight,
-                "Timestamp": datetime.now().isoformat()
+            print(f"Error stopping sentinel network: {str(e)}")
+            
+    def _monitor_loop(self):
+        """Main monitoring loop."""
+        while self.running:
+            try:
+                current_time = time.time()
+                
+                # Update health metrics
+                self.sentinels["health"]["metrics"] = {
+                    "last_check": current_time,
+                    "uptime": current_time - self.sentinels["health"]["last_check"]
+                        if self.sentinels["health"]["last_check"] else 0
+                }
+                
+                # Update performance metrics
+                self.sentinels["performance"]["metrics"] = {
+                    "last_check": current_time,
+                    "response_time": 0.1  # Placeholder
+                }
+                
+                # Update security status
+                self.sentinels["security"]["last_check"] = current_time
+                
+                time.sleep(1.0)  # Check every second
+                
+            except Exception as e:
+                print(f"Error in monitor loop: {str(e)}")
+                time.sleep(1.0)
+                
+    def get_status(self) -> Dict[str, Any]:
+        """Get current sentinel network status."""
+        return {
+            "running": self.running,
+            "sentinels": {
+                name: {
+                    "status": sentinel["status"],
+                    "last_check": sentinel["last_check"]
+                }
+                for name, sentinel in self.sentinels.items()
             }
+        }
+        
+    def add_security_alert(self, alert: Dict[str, Any]):
+        """Add a security alert."""
+        if not self.running:
+            raise RuntimeError("Sentinel network is not running")
+            
+        try:
+            alert["timestamp"] = time.time()
+            self.sentinels["security"]["alerts"].append(alert)
         except Exception as e:
-            self._log_error(f"Error in report_status: {str(e)}")
-            return {"error": str(e)}
-
-    def _log_error(self, error_msg: str):
-        """Log an error and update error count."""
-        print(f"[{datetime.now().isoformat()}] ERROR: {error_msg}")
-        self.system_health["error_count"] += 1
+            print(f"Error adding security alert: {str(e)}")
+            
+    def get_health_metrics(self) -> Dict[str, Any]:
+        """Get current health metrics."""
+        return self.sentinels["health"]["metrics"]
+        
+    def get_performance_metrics(self) -> Dict[str, Any]:
+        """Get current performance metrics."""
+        return self.sentinels["performance"]["metrics"]
+        
+    def get_security_alerts(self) -> List[Dict[str, Any]]:
+        """Get list of security alerts."""
+        return self.sentinels["security"]["alerts"]
 
 class SentinelPrime:
     """High-Level Oversight Sentinels (Primes)"""
