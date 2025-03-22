@@ -1,7 +1,30 @@
-aws:
-  account_id: "ACCOUNT_ID"  # You'll need to replace this with your actual AWS account ID
-  region: "us-east-1"  # Using N. Virginia as primary region
-  environment: "dev"
+project_name: lef
+environment: dev
+region: us-east-1
+account_id: '212199569682'
+
+# SageMaker configuration
+sagemaker:
+  instance_type: ml.t2.medium
+  initial_instance_count: 1
+  model_name: consciousness
+  endpoint_name: consciousness
+
+# S3 configuration
+s3:
+  deployment_bucket: lef-dev-deployment
+  learning_environment_bucket: lef-dev-learning-environment
+
+# DynamoDB configuration
+dynamodb:
+  consciousness_table: consciousness
+
+# Lambda configuration
+lambda:
+  function_name: lef
+  memory_size: 1024
+  timeout: 900
+  runtime: python3.11
 
 resource_naming:
   prefix: "lef-"
