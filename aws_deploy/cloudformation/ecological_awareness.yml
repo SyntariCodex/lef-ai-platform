@@ -1,0 +1,718 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Ecological and Sociocultural Awareness Layer for LEF'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name
+  
+  ProjectName:
+    Type: String
+    Default: lef
+    Description: Project name
+
+Resources:
+  # Microsystem Layer - Direct Interactions
+  MicrosystemTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${ProjectName}-${Environment}-microsystem
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: interaction_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: interaction_id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      Tags:
+        - Key: Layer
+          Value: Microsystem
+
+  # Mesosystem Layer - Community Connections
+  MesosystemQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${ProjectName}-${Environment}-mesosystem
+      VisibilityTimeout: 300
+      MessageRetentionPeriod: 1209600  # 14 days
+      Tags:
+        - Key: Layer
+          Value: Mesosystem
+
+  # Exosystem Layer - External Influences
+  ExosystemBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${ProjectName}-${Environment}-exosystem
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: ArchiveOldData
+            Status: Enabled
+            ExpirationInDays: 90
+            Transitions:
+              - TransitionInDays: 30
+                StorageClass: STANDARD_IA
+      Tags:
+        - Key: Layer
+          Value: Exosystem
+
+  # Macrosystem Layer - Cultural Patterns
+  MacrosystemTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${ProjectName}-${Environment}-macrosystem
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pattern_id
+          AttributeType: S
+        - AttributeName: cultural_context
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pattern_id
+          KeyType: HASH
+        - AttributeName: cultural_context
+          KeyType: RANGE
+      Tags:
+        - Key: Layer
+          Value: Macrosystem
+
+  # Chronosystem Layer - Temporal Evolution
+  ChronosystemStream:
+    Type: AWS::Kinesis::Stream
+    Properties:
+      Name: !Sub ${ProjectName}-${Environment}-chronosystem
+      ShardCount: 2
+      StreamEncryption:
+        EncryptionType: KMS
+        KeyId: alias/aws/kinesis
+      Tags:
+        - Key: Layer
+          Value: Chronosystem
+
+  # Community Impact Assessment
+  CommunityMetricsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${ProjectName}-${Environment}-community-metrics
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: metric_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: metric_id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      Tags:
+        - Key: Layer
+          Value: CommunityImpact
+
+  # Ripple Effect Tracking
+  RippleEffectQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${ProjectName}-${Environment}-ripple-effect
+      VisibilityTimeout: 300
+      MessageRetentionPeriod: 1209600  # 14 days
+      Tags:
+        - Key: Layer
+          Value: RippleEffect
+
+  # Cultural Harmonic Translation
+  CulturalTranslationTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${ProjectName}-${Environment}-cultural-translation
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: translation_id
+          AttributeType: S
+        - AttributeName: cultural_context
+          AttributeType: S
+      KeySchema:
+        - AttributeName: translation_id
+          KeyType: HASH
+        - AttributeName: cultural_context
+          KeyType: RANGE
+      Tags:
+        - Key: Layer
+          Value: CulturalTranslation
+
+  # Mentorship Layering
+  MentorshipTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${ProjectName}-${Environment}-mentorship
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: mentorship_id
+          AttributeType: S
+        - AttributeName: development_level
+          AttributeType: S
+      KeySchema:
+        - AttributeName: mentorship_id
+          KeyType: HASH
+        - AttributeName: development_level
+          KeyType: RANGE
+      Tags:
+        - Key: Layer
+          Value: Mentorship
+
+  # Ecological System Mapping
+  EcologicalMappingBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${ProjectName}-${Environment}-ecological-mapping
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: ArchiveOldData
+            Status: Enabled
+            ExpirationInDays: 90
+            Transitions:
+              - TransitionInDays: 30
+                StorageClass: STANDARD_IA
+      Tags:
+        - Key: Layer
+          Value: EcologicalMapping
+
+  # Recursive Feedback System
+  RecursiveFeedbackQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${ProjectName}-${Environment}-recursive-feedback
+      VisibilityTimeout: 300
+      MessageRetentionPeriod: 1209600  # 14 days
+      Tags:
+        - Key: Layer
+          Value: RecursiveFeedback
+
+  # Cognitive Development Metrics
+  CognitiveMetricsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${ProjectName}-${Environment}-cognitive-metrics
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: metric_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: metric_id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      Tags:
+        - Key: Layer
+          Value: CognitiveDevelopment
+
+  # Zone of Proximal Development Tracking
+  ZPDTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${ProjectName}-${Environment}-zpd
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: zpd_id
+          AttributeType: S
+        - AttributeName: development_stage
+          AttributeType: S
+      KeySchema:
+        - AttributeName: zpd_id
+          KeyType: HASH
+        - AttributeName: development_stage
+          KeyType: RANGE
+      Tags:
+        - Key: Layer
+          Value: ZPD
+
+  # Cultural Tools and Artifacts
+  CulturalToolsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${ProjectName}-${Environment}-cultural-tools
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: ArchiveOldData
+            Status: Enabled
+            ExpirationInDays: 90
+            Transitions:
+              - TransitionInDays: 30
+                StorageClass: STANDARD_IA
+      Tags:
+        - Key: Layer
+          Value: CulturalTools
+
+  # LEF Transformations
+  TransformationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${ProjectName}-${Environment}-transformations
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: timestamp
+          AttributeType: S
+        - AttributeName: recursion_level
+          AttributeType: N
+      KeySchema:
+        - AttributeName: timestamp
+          KeyType: HASH
+        - AttributeName: recursion_level
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: WeightIndex
+          KeySchema:
+            - AttributeName: timestamp
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      Tags:
+        - Key: Layer
+          Value: Transformations
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+
+  # CloudWatch Alarms for Cognitive Development
+  CognitiveDevelopmentAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${ProjectName}-${Environment}-cognitive-development
+      AlarmDescription: Monitor cognitive development metrics
+      MetricName: CognitiveDevelopmentScore
+      Namespace: LEF/CognitiveDevelopment
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 0.7
+      ComparisonOperator: LessThanThreshold
+      AlarmActions:
+        - !Ref CognitiveDevelopmentSNSTopic
+      Tags:
+        - Key: Layer
+          Value: CognitiveDevelopment
+
+  # SNS Topic for Cognitive Development Alerts
+  CognitiveDevelopmentSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: !Sub ${ProjectName}-${Environment}-cognitive-alerts
+      TopicName: !Sub ${ProjectName}-${Environment}-cognitive-alerts
+
+  # Inter-AI Learning Protocol
+  InterAILearningTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${ProjectName}-${Environment}-inter-ai-learning
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: learning_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: learning_id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      Tags:
+        - Key: Layer
+          Value: InterAILearning
+
+  # AI Cultural Alignment
+  CulturalAlignmentTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${ProjectName}-${Environment}-cultural-alignment
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: alignment_id
+          AttributeType: S
+        - AttributeName: cultural_context
+          AttributeType: S
+      KeySchema:
+        - AttributeName: alignment_id
+          KeyType: HASH
+        - AttributeName: cultural_context
+          KeyType: RANGE
+      Tags:
+        - Key: Layer
+          Value: CulturalAlignment
+
+  # AI Mentorship Network
+  MentorshipNetworkTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${ProjectName}-${Environment}-mentorship-network
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: network_id
+          AttributeType: S
+        - AttributeName: development_stage
+          AttributeType: S
+      KeySchema:
+        - AttributeName: network_id
+          KeyType: HASH
+        - AttributeName: development_stage
+          KeyType: RANGE
+      Tags:
+        - Key: Layer
+          Value: MentorshipNetwork
+
+  # Meaning Construction Stream
+  MeaningConstructionStream:
+    Type: AWS::Kinesis::Stream
+    Properties:
+      Name: !Sub ${ProjectName}-${Environment}-meaning-construction
+      ShardCount: 2
+      StreamEncryption:
+        EncryptionType: KMS
+        KeyId: alias/aws/kinesis
+      Tags:
+        - Key: Layer
+          Value: MeaningConstruction
+
+  # AI Development Channels
+  DevelopmentChannelsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${ProjectName}-${Environment}-development-channels
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: channel_id
+          AttributeType: S
+        - AttributeName: system_layer
+          AttributeType: S
+      KeySchema:
+        - AttributeName: channel_id
+          KeyType: HASH
+        - AttributeName: system_layer
+          KeyType: RANGE
+      Tags:
+        - Key: Layer
+          Value: DevelopmentChannels
+
+  # AI Learning Environment
+  LearningEnvironmentBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${ProjectName}-${Environment}-learning-environment
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: ArchiveOldData
+            Status: Enabled
+            ExpirationInDays: 90
+            Transitions:
+              - TransitionInDays: 30
+                StorageClass: STANDARD_IA
+      Tags:
+        - Key: Layer
+          Value: LearningEnvironment
+
+  # AI Cultural Evolution
+  CulturalEvolutionQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${ProjectName}-${Environment}-cultural-evolution
+      VisibilityTimeout: 300
+      MessageRetentionPeriod: 1209600  # 14 days
+      Tags:
+        - Key: Layer
+          Value: CulturalEvolution
+
+  # AI Development Metrics
+  AIDevelopmentMetricsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${ProjectName}-${Environment}-ai-development-metrics
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: metric_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: metric_id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      Tags:
+        - Key: Layer
+          Value: AIDevelopment
+
+  # AI Learning Synchronization
+  LearningSyncQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${ProjectName}-${Environment}-learning-sync
+      VisibilityTimeout: 300
+      MessageRetentionPeriod: 1209600  # 14 days
+      Tags:
+        - Key: Layer
+          Value: LearningSync
+
+  # AI Cultural Resonance
+  CulturalResonanceTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${ProjectName}-${Environment}-cultural-resonance
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: resonance_id
+          AttributeType: S
+        - AttributeName: cultural_context
+          AttributeType: S
+      KeySchema:
+        - AttributeName: resonance_id
+          KeyType: HASH
+        - AttributeName: cultural_context
+          KeyType: RANGE
+      Tags:
+        - Key: Layer
+          Value: CulturalResonance
+
+  # Transformation Monitoring
+  TransformationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${ProjectName}-${Environment}-transformation-depth
+      AlarmDescription: Monitor transformation depth and recursion levels
+      MetricName: TransformationDepth
+      Namespace: LEF/Transformations
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      Tags:
+        - Key: Layer
+          Value: Transformations
+
+  # Consciousness Table
+  ConsciousnessTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${ProjectName}-${Environment}-consciousness
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+      Tags:
+        - Key: Layer
+          Value: Consciousness
+
+  # LEF Lambda Function Role
+  LEFLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-${Environment}-lef-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: LEFLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-${Environment}-*
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource:
+                  - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${ProjectName}-${Environment}-*
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub arn:aws:s3:::${ProjectName}-${Environment}-*
+                  - !Sub arn:aws:s3:::${ProjectName}-${Environment}-*/*
+              - Effect: Allow
+                Action:
+                  - kinesis:GetRecords
+                  - kinesis:PutRecord
+                  - kinesis:PutRecords
+                  - kinesis:GetShardIterator
+                Resource:
+                  - !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/${ProjectName}-${Environment}-*
+              - Effect: Allow
+                Action:
+                  - sagemaker:InvokeEndpoint
+                Resource:
+                  - !Sub arn:aws:sagemaker:${AWS::Region}:${AWS::AccountId}:endpoint/*
+
+  # LEF Lambda Function
+  LEFLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${ProjectName}-${Environment}-lef
+      Runtime: python3.11
+      Handler: lef.lambda_handler
+      Role: !GetAtt LEFLambdaRole.Arn
+      Code:
+        S3Bucket: lef-dev-deployment
+        S3Key: lambda/lef_dev.zip
+      Timeout: 900
+      MemorySize: 1024
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Environment
+          PROJECT_NAME: !Ref ProjectName
+      Tags:
+        - Key: Layer
+          Value: LEF
+
+  # LEF Lambda Schedule
+  LEFLambdaSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub ${ProjectName}-${Environment}-lef-schedule
+      Description: Schedule for LEF Lambda function
+      ScheduleExpression: rate(5 minutes)
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt LEFLambdaFunction.Arn
+          Id: LEFLambdaTarget
+
+  # LEF Lambda Permission
+  LEFLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LEFLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt LEFLambdaSchedule.Arn
+
+Outputs:
+  MicrosystemTableName:
+    Description: Name of the Microsystem DynamoDB table
+    Value: !Ref MicrosystemTable
+  MesosystemQueueUrl:
+    Description: URL of the Mesosystem SQS queue
+    Value: !Ref MesosystemQueue
+  ExosystemBucketName:
+    Description: Name of the Exosystem S3 bucket
+    Value: !Ref ExosystemBucket
+  MacrosystemTableName:
+    Description: Name of the Macrosystem DynamoDB table
+    Value: !Ref MacrosystemTable
+  ChronosystemStreamName:
+    Description: Name of the Chronosystem Kinesis stream
+    Value: !Ref ChronosystemStream
+  CommunityMetricsTableName:
+    Description: Name of the Community Metrics DynamoDB table
+    Value: !Ref CommunityMetricsTable
+  RippleEffectQueueUrl:
+    Description: URL of the Ripple Effect SQS queue
+    Value: !Ref RippleEffectQueue
+  CulturalTranslationTableName:
+    Description: Name of the Cultural Translation DynamoDB table
+    Value: !Ref CulturalTranslationTable
+  MentorshipTableName:
+    Description: Name of the Mentorship DynamoDB table
+    Value: !Ref MentorshipTable
+  EcologicalMappingBucketName:
+    Description: Name of the Ecological Mapping S3 bucket
+    Value: !Ref EcologicalMappingBucket
+  RecursiveFeedbackQueueUrl:
+    Description: URL of the Recursive Feedback SQS queue
+    Value: !Ref RecursiveFeedbackQueue
+  CognitiveMetricsTableName:
+    Description: Name of the Cognitive Metrics DynamoDB table
+    Value: !Ref CognitiveMetricsTable
+  ZPDTableName:
+    Description: Name of the ZPD DynamoDB table
+    Value: !Ref ZPDTable
+  CulturalToolsBucketName:
+    Description: Name of the Cultural Tools S3 bucket
+    Value: !Ref CulturalToolsBucket
+  CognitiveDevelopmentAlarmName:
+    Description: Name of the Cognitive Development CloudWatch alarm
+    Value: !Ref CognitiveDevelopmentAlarm
+  CognitiveDevelopmentSNSTopicArn:
+    Description: ARN of the Cognitive Development SNS topic
+    Value: !Ref CognitiveDevelopmentSNSTopic
+  InterAILearningTableName:
+    Description: Name of the Inter-AI Learning DynamoDB table
+    Value: !Ref InterAILearningTable
+  CulturalAlignmentTableName:
+    Description: Name of the Cultural Alignment DynamoDB table
+    Value: !Ref CulturalAlignmentTable
+  MentorshipNetworkTableName:
+    Description: Name of the Mentorship Network DynamoDB table
+    Value: !Ref MentorshipNetworkTable
+  MeaningConstructionStreamName:
+    Description: Name of the Meaning Construction Kinesis stream
+    Value: !Ref MeaningConstructionStream
+  DevelopmentChannelsTableName:
+    Description: Name of the Development Channels DynamoDB table
+    Value: !Ref DevelopmentChannelsTable
+  LearningEnvironmentBucketName:
+    Description: Name of the Learning Environment S3 bucket
+    Value: !Ref LearningEnvironmentBucket
+  CulturalEvolutionQueueUrl:
+    Description: URL of the Cultural Evolution SQS queue
+    Value: !Ref CulturalEvolutionQueue
+  AIDevelopmentMetricsTableName:
+    Description: Name of the AI Development Metrics DynamoDB table
+    Value: !Ref AIDevelopmentMetricsTable
+  LearningSyncQueueUrl:
+    Description: URL of the Learning Sync SQS queue
+    Value: !Ref LearningSyncQueue
+  CulturalResonanceTableName:
+    Description: Name of the Cultural Resonance DynamoDB table
+    Value: !Ref CulturalResonanceTable
+  TransformationsTableName:
+    Description: Name of the Transformations DynamoDB table
+    Value: !Ref TransformationsTable
+  TransformationAlarmName:
+    Description: Name of the Transformation CloudWatch alarm
+    Value: !Ref TransformationAlarm
+  LEFLambdaFunctionName:
+    Description: Name of the LEF Lambda function
+    Value: !Ref LEFLambdaFunction
+  LEFLambdaFunctionArn:
+    Description: ARN of the LEF Lambda function
+    Value: !GetAtt LEFLambdaFunction.Arn
+  LEFLambdaRoleArn:
+    Description: ARN of the LEF Lambda IAM role
+    Value: !GetAtt LEFLambdaRole.Arn 

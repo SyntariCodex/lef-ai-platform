@@ -1,18 +1,18 @@
 aws:
-  account_id: "YOUR_ACCOUNT_ID"  # Replace with your AWS account ID
-  region: "us-west-2"  # Default region, can be changed
-  environment: "dev"  # dev, staging, or prod
+  account_id: "ACCOUNT_ID"  # You'll need to replace this with your actual AWS account ID
+  region: "us-east-1"  # Using N. Virginia as primary region
+  environment: "dev"
 
 resource_naming:
-  prefix: "lef-"  # Prefix for all AWS resources
-  suffix: ""  # Optional suffix for resource names
+  prefix: "lef-"
+  suffix: "-v1"
 
 security:
-  mfa_required: true
+  mfa_required: false  # We can enable this later after initial setup
   customer_managed_keys: true
   vpc_only: false
   encryption_algorithm: "AES256"
-  key_rotation_period: 90  # days
+  key_rotation_period: 90
 
 monitoring:
   log_retention_days: 30
@@ -25,11 +25,7 @@ monitoring:
 backup:
   frequency: "daily"
   retention_days: 30
-  cross_region: true  # Enable cross-region backups
-  cross_region_retention_days: 90
-  secondary_regions:  # Additional backup regions
-    - "us-east-1"    # N. Virginia
-    - "eu-west-1"    # Ireland
+  cross_region: false  # We can enable this later
   backup_encryption: true
   backup_monitoring: true
 

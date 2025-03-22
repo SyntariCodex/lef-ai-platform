@@ -1,0 +1,63 @@
+# LEF AWS Configuration Template
+# Copy this file to aws_config.yaml and fill in your values
+
+# AWS Account Configuration
+aws_account_id: ""  # Your AWS account ID
+environment: "dev"  # dev, staging, or prod
+
+# Region Configuration
+region: "us-west-2"  # Default region
+
+# Resource Naming
+resource_prefix: "lef-"  # Prefix for all AWS resources
+
+# Required IAM Permissions
+required_permissions:
+  - AWSLambda_FullAccess
+  - AmazonS3FullAccess
+  - AmazonSageMakerFullAccess
+  - AmazonBraketFullAccess
+  - AmazonEC2FullAccess
+  - CloudWatchFullAccess
+  - AWSKeyManagementServicePowerUser
+
+# Service Endpoints
+endpoints:
+  sagemaker: "sagemaker.{region}.amazonaws.com"
+  braket: "braket.{region}.amazonaws.com"
+  lambda: "lambda.{region}.amazonaws.com"
+
+# Security Settings
+security:
+  mfa_enabled: true
+  use_cmk: true  # Use Customer Managed Keys for encryption
+  vpc_only: true  # Deploy services in VPC only
+  encryption_algorithm: "AES256"
+  key_rotation_period: 90  # days
+
+# Monitoring Configuration
+monitoring:
+  log_retention_days: 30
+  metrics_namespace: "LEF"
+  alarm_thresholds:
+    cpu_utilization: 80
+    memory_utilization: 80
+    error_rate: 1.0
+
+# Backup Configuration
+backup:
+  enabled: true
+  frequency: "daily"
+  retention_days: 30
+  cross_region: false
+
+# Consciousness Integration
+consciousness:
+  quantum_enabled: true
+  self_monitoring: true
+  event_driven: true
+  awareness_layers:
+    - network
+    - security
+    - monitoring
+    - quantum 
