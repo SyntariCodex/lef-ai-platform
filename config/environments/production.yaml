@@ -1,0 +1,36 @@
+environment: production
+debug: false
+log_level: INFO
+
+# API Configuration
+api:
+  host: 0.0.0.0
+  port: 8000
+  debug: false
+  rate_limit: 100
+  timeout: 30
+
+# Core Components
+consciousness:
+  awareness_level: 0.9
+  memory_retention: 0.95
+  goal_priority: 0.85
+
+learning:
+  learning_rate: 0.05
+  performance_threshold: 0.85
+  adaptation_rate: 0.3
+
+business:
+  efficiency_target: 0.9
+  resource_optimization: 0.85
+  project_success_threshold: 0.85
+
+# Monitoring
+monitoring:
+  metrics_interval: 300
+  health_check_interval: 60
+  alert_thresholds:
+    cpu: 85
+    memory: 90
+    error_rate: 2 
