@@ -77,4 +77,37 @@ var/
 wheels/
 *.egg-info/
 .installed.cfg
-*.egg 
+*.egg
+
+# Python virtual environment
+.venv/
+__pycache__/
+*.pyc
+
+# IDE settings
+.vscode/
+*.code-workspace
+
+# Screenshots and documentation
+Screenshot*.png
+*.docx
+
+# Temporary files
+*.out
+*.zip
+response.json
+test_event.json
+
+# AWS credentials and config
+*accessKeys*.csv
+*-policy.json
+
+# Backup files
+backups/
+
+# State files
+lef_state/
+
+# Local development
+cleanup.py
+cleanup_config.yaml 
