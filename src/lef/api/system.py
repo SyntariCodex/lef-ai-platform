@@ -1,55 +1,91 @@
 """
-System API endpoints for the LEF system.
+System API endpoints.
 """
 
-import psutil
-from datetime import datetime
 from fastapi import APIRouter, HTTPException
-from typing import List, Optional
+from typing import Dict, List, Optional
 
-from ..models.system_state import SystemState
-from ..models.events import Event, EventType, EventSeverity
+from ..database import get_system_state
+from ..models.system_state import SystemState, SystemStatus, ComponentStatus
 
-router = APIRouter(prefix="/api/system", tags=["system"])
+router = APIRouter(
+    prefix="/api/system",
+    tags=["system"]
+)
 
-@router.get("/status", response_model=SystemState)
-async def get_system_status():
-    """Get current system status."""
+@router.get("/status")
+async def get_status() -> Dict:
+    """Get system status."""
     try:
-        process = psutil.Process()
-        memory_info = process.memory_info()
-        
-        return SystemState(
-            status="running",
-            version="1.0.0",
-            uptime=process.create_time(),
-            memory_usage=memory_info.rss / 1024 / 1024,  # Convert to MB
-            cpu_usage=process.cpu_percent(),
-            active_tasks=0,  # TODO: Implement task counting
-            completed_tasks=0,
-            failed_tasks=0,
-            system_metrics={
-                "threads": process.num_threads(),
-                "open_files": len(process.open_files()),
-                "connections": len(process.connections())
-            }
-        )
+        state = get_system_state()
+        return {
+            "status": state.status,
+            "version": state.version,
+            "uptime": state.uptime,
+            "last_updated": state.last_updated,
+            "components": state.components,
+            "errors": state.errors,
+            "warnings": state.warnings
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/events", response_model=List[Event])
-async def get_system_events(
-    event_type: Optional[EventType] = None,
-    severity: Optional[EventSeverity] = None,
-    limit: int = 50
-):
-    """Get system events with optional filtering."""
-    # TODO: Implement event storage and retrieval
-    return []
+@router.get("/metrics")
+async def get_metrics() -> Dict:
+    """Get system metrics."""
+    try:
+        state = get_system_state()
+        return {
+            "metrics": state.metrics,
+            "resource_usage": state.resource_usage,
+            "performance_metrics": state.performance_metrics,
+            "security_status": state.security_status
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/events", response_model=Event)
-async def create_system_event(event: Event):
-    """Create a new system event."""
-    # TODO: Implement event storage
-    event.created_at = datetime.utcnow()
-    return event 
+@router.get("/health")
+async def get_health() -> Dict:
+    """Get system health status."""
+    try:
+        state = get_system_state()
+        return {
+            "status": state.status,
+            "components": state.components,
+            "errors": state.errors,
+            "warnings": state.warnings,
+            "metrics": {
+                "cpu_usage": state.metrics.get("cpu_usage", 0.0),
+                "memory_usage": state.metrics.get("memory_usage", 0.0),
+                "disk_usage": state.metrics.get("disk_usage", 0.0)
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/components")
+async def get_components() -> Dict[str, ComponentStatus]:
+    """Get component statuses."""
+    try:
+        state = get_system_state()
+        return state.components
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/errors")
+async def get_errors() -> List[str]:
+    """Get system errors."""
+    try:
+        state = get_system_state()
+        return state.errors
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/warnings")
+async def get_warnings() -> List[str]:
+    """Get system warnings."""
+    try:
+        state = get_system_state()
+        return state.warnings
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) 

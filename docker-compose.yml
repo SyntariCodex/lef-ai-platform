@@ -1,21 +1,59 @@
 version: '3.8'
 
 services:
-  lef:
+  app:
     build: .
     ports:
-      - "8000:8000"
-    volumes:
-      # Mount source code for development
-      - ./src:/app/src
-      # Mount LEF data directory for persistence
-      - lef_data:/root/.lef
+      - "8001:8000"
     environment:
-      - LEF_ENV=development
-      - PYTHONPATH=/app
-    # Enable hot reload for development
-    command: python -m src.lef.supervisor --reload
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=lef_db
+      - DB_USER=lef_user
+      - DB_PASSWORD=your_secure_password
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=your_secure_password
+    depends_on:
+      - db
+      - redis
+      - jaeger
+    volumes:
+      - .:/app
+    command: uvicorn src.lef.main:app --host 0.0.0.0 --port 8000 --reload
+
+  db:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=lef_db
+      - POSTGRES_USER=lef_user
+      - POSTGRES_PASSWORD=your_secure_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass your_secure_password
+    volumes:
+      - redis_data:/data
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.47
+    ports:
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "14250:14250"
+      - "14268:14268"
+      - "16686:16686"
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
 
 volumes:
+  postgres_data:
+  redis_data:
   lef_data:
     # Named volume for LEF data persistence 
