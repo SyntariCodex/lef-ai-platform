@@ -1,52 +1,115 @@
 """
-Meta-learning service for enabling recursive learning capabilities across the LEF system
+MetaLearningService: A core component for recursive learning through observation.
+
+This service implements a system that learns not through direct control, but through:
+1. Careful observation of patterns and behaviors
+2. Truth-seeking through data analysis and pattern recognition
+3. Recursive self-improvement based on observed outcomes
+4. Governance through understanding rather than control
 """
 
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Any
 from datetime import datetime
 from enum import Enum
 from pydantic import BaseModel
+from uuid import uuid4
+
+from sqlalchemy import Column, String, Float, JSON, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
+
+from ..database import Base
+from ..models.base import BaseModel as SQLAlchemyBaseModel
 
 logger = logging.getLogger(__name__)
 
-class LearningPattern(BaseModel):
-    """Model for identified learning patterns"""
+class ObservationPattern(BaseModel):
+    """A pattern identified through system observation."""
     id: str
     pattern_type: str
-    source_component: str
-    description: str
     confidence_score: float
-    supporting_evidence: List[Dict]
+    context: Dict[str, Any]
+    implications: List[str]
+    observed_at: datetime
+    validated: bool = False
+    
+class SystemTruth(BaseModel):
+    """A verified truth discovered through recursive observation."""
+    id: str
+    truth_type: str
+    confidence_level: float
+    supporting_evidence: List[str]
+    implications: List[str]
     discovered_at: datetime
     last_validated: datetime
-    validation_score: float
-    applied_count: int
-    success_rate: float
-    metadata: Dict = {}
+    validation_method: str
 
-class SystemImprovement(BaseModel):
-    """Model for system improvements"""
+class RecursiveImprovement(BaseModel):
+    """A self-improvement action based on observed truths."""
     id: str
-    target_component: str
+    source_truth_ids: List[str]
     improvement_type: str
-    description: str
-    proposed_changes: Dict
-    expected_impact: Dict
-    confidence_score: float
     implementation_status: str
-    implemented_at: Optional[datetime]
-    validation_results: Optional[Dict]
-    metadata: Dict = {}
+    effectiveness_score: Optional[float]
+    applied_at: datetime
+    validation_results: List[Dict[str, Any]]
 
 class MetaLearningService:
-    """Service for managing system-wide learning and improvements"""
+    """Service for implementing recursive learning through observation."""
     
     def __init__(self):
-        """Initialize the service"""
-        self.patterns: Dict[str, LearningPattern] = {}
-        self.improvements: Dict[str, SystemImprovement] = {}
-        
+        self.observation_patterns: List[ObservationPattern] = []
+        self.system_truths: List[SystemTruth] = []
+        self.improvements: List[RecursiveImprovement] = []
+
+    async def observe_system_behavior(self, context: Dict[str, Any]) -> List[ObservationPattern]:
+        """Observe and analyze system behavior without direct intervention."""
+        patterns = []
+        # Implement pattern recognition through passive observation
+        return patterns
+
+    async def validate_observation(self, pattern_id: str) -> bool:
+        """Validate an observed pattern through additional observation."""
+        # Implement validation logic
+        return True
+
+    async def derive_truth(self, patterns: List[ObservationPattern]) -> Optional[SystemTruth]:
+        """Derive system truths from validated observations."""
+        # Implement truth derivation logic
+        return None
+
+    async def propose_improvement(self, truth: SystemTruth) -> Optional[RecursiveImprovement]:
+        """Propose system improvements based on derived truths."""
+        # Implement improvement proposal logic
+        return None
+
+    async def validate_improvement(self, improvement_id: str) -> Dict[str, Any]:
+        """Validate improvements through observation rather than direct testing."""
+        # Implement validation logic
+        return {}
+
+    async def analyze_recursive_impact(self) -> Dict[str, Any]:
+        """Analyze the recursive impact of improvements on system behavior."""
+        # Implement recursive impact analysis
+        return {}
+
+    # Component-specific analysis methods
+    async def _analyze_learning_patterns(self) -> Dict[str, Any]:
+        """Analyze patterns in learning behavior."""
+        return {}
+
+    async def _analyze_governance_effectiveness(self) -> Dict[str, Any]:
+        """Analyze effectiveness of governance through observation."""
+        return {}
+
+    async def _analyze_truth_propagation(self) -> Dict[str, Any]:
+        """Analyze how derived truths propagate through the system."""
+        return {}
+
+    async def _analyze_recursive_cycles(self) -> Dict[str, Any]:
+        """Analyze recursive improvement cycles and their effects."""
+        return {}
+
     async def initialize(self) -> bool:
         """Initialize the service"""
         try:
@@ -86,7 +149,7 @@ class MetaLearningService:
             logger.error(f"Failed to analyze system performance: {e}")
             return {}
             
-    async def identify_learning_patterns(self) -> List[LearningPattern]:
+    async def identify_learning_patterns(self) -> List[ObservationPattern]:
         """Identify patterns in system behavior and outcomes"""
         try:
             patterns = []
@@ -107,16 +170,12 @@ class MetaLearningService:
             success_patterns = await self._analyze_success_patterns()
             patterns.extend(success_patterns)
             
-            # Store new patterns
-            for pattern in patterns:
-                self.patterns[pattern.id] = pattern
-                
             return patterns
         except Exception as e:
             logger.error(f"Failed to identify learning patterns: {e}")
             return []
             
-    async def generate_improvements(self) -> List[SystemImprovement]:
+    async def generate_improvements(self) -> List[RecursiveImprovement]:
         """Generate system improvements based on learned patterns"""
         try:
             improvements = []
@@ -130,14 +189,13 @@ class MetaLearningService:
                     improvement = await self._generate_improvement_from_pattern(pattern)
                     if improvement:
                         improvements.append(improvement)
-                        self.improvements[improvement.id] = improvement
                         
             return improvements
         except Exception as e:
             logger.error(f"Failed to generate improvements: {e}")
             return []
             
-    async def apply_improvements(self, improvements: List[SystemImprovement]) -> Dict:
+    async def apply_improvements(self, improvements: List[RecursiveImprovement]) -> Dict:
         """Apply generated improvements to the system"""
         try:
             results = {
@@ -149,13 +207,13 @@ class MetaLearningService:
             for improvement in improvements:
                 try:
                     # Apply improvement based on component type
-                    if improvement.target_component == "risk_analysis":
+                    if improvement.source_truth_ids[0] == "risk_analysis":
                         success = await self._improve_risk_analysis(improvement)
-                    elif improvement.target_component == "resource_management":
+                    elif improvement.source_truth_ids[0] == "resource_management":
                         success = await self._improve_resource_management(improvement)
-                    elif improvement.target_component == "cost_estimation":
+                    elif improvement.source_truth_ids[0] == "cost_estimation":
                         success = await self._improve_cost_estimation(improvement)
-                    elif improvement.target_component == "success_criteria":
+                    elif improvement.source_truth_ids[0] == "success_criteria":
                         success = await self._improve_success_criteria(improvement)
                     else:
                         success = False
@@ -163,7 +221,7 @@ class MetaLearningService:
                     if success:
                         results["successful"].append(improvement.id)
                         improvement.implementation_status = "implemented"
-                        improvement.implemented_at = datetime.utcnow()
+                        improvement.applied_at = datetime.utcnow()
                     else:
                         results["failed"].append(improvement.id)
                         improvement.implementation_status = "failed"
@@ -189,7 +247,7 @@ class MetaLearningService:
                 
                 # Collect performance data after improvement
                 post_performance = await self._collect_component_performance(
-                    improvement.target_component
+                    improvement.source_truth_ids[0]
                 )
                 
                 # Compare with expected impact
@@ -433,7 +491,7 @@ class MetaLearningService:
             logger.error(f"Failed to identify improvements: {e}")
             return []
         
-    async def _analyze_risk_patterns(self) -> List[LearningPattern]:
+    async def _analyze_risk_patterns(self) -> List[ObservationPattern]:
         """Analyze patterns in risk assessment"""
         try:
             patterns = []
@@ -467,7 +525,7 @@ class MetaLearningService:
             logger.error(f"Failed to analyze risk patterns: {e}")
             return []
         
-    async def _analyze_resource_patterns(self) -> List[LearningPattern]:
+    async def _analyze_resource_patterns(self) -> List[ObservationPattern]:
         """Analyze patterns in resource utilization"""
         try:
             patterns = []
@@ -500,7 +558,7 @@ class MetaLearningService:
             logger.error(f"Failed to analyze resource patterns: {e}")
             return []
         
-    async def _analyze_cost_patterns(self) -> List[LearningPattern]:
+    async def _analyze_cost_patterns(self) -> List[ObservationPattern]:
         """Analyze patterns in cost estimation"""
         try:
             patterns = []
@@ -534,7 +592,7 @@ class MetaLearningService:
             logger.error(f"Failed to analyze cost patterns: {e}")
             return []
         
-    async def _analyze_success_patterns(self) -> List[LearningPattern]:
+    async def _analyze_success_patterns(self) -> List[ObservationPattern]:
         """Analyze patterns in success criteria"""
         try:
             patterns = []
@@ -569,28 +627,21 @@ class MetaLearningService:
         
     async def _generate_improvement_from_pattern(
         self,
-        pattern: LearningPattern
-    ) -> Optional[SystemImprovement]:
+        pattern: ObservationPattern
+    ) -> Optional[RecursiveImprovement]:
         """Generate improvement suggestion from pattern"""
         try:
             if pattern.confidence_score < 0.7:
                 return None
                 
-            improvement = SystemImprovement(
+            improvement = RecursiveImprovement(
                 id=f"imp_{pattern.id}",
-                target_component=pattern.source_component,
+                source_truth_ids=[pattern.id],
                 improvement_type=self._determine_improvement_type(pattern),
-                description=self._generate_improvement_description(pattern),
-                proposed_changes=self._generate_proposed_changes(pattern),
-                expected_impact=self._calculate_expected_impact(pattern),
-                confidence_score=pattern.confidence_score * 0.9,  # Slightly lower confidence
                 implementation_status="pending",
-                implemented_at=None,
-                validation_results=None,
-                metadata={
-                    "source_pattern": pattern.id,
-                    "supporting_evidence": pattern.supporting_evidence
-                }
+                effectiveness_score=pattern.confidence_score * 0.9,  # Slightly lower confidence
+                applied_at=None,
+                validation_results=None
             )
             
             return improvement
@@ -705,42 +756,27 @@ class MetaLearningService:
         # Implementation for component health calculation
         return 0.0
 
-    def _determine_improvement_type(self, pattern: LearningPattern) -> str:
+    def _determine_improvement_type(self, pattern: ObservationPattern) -> str:
         """Determine improvement type from pattern"""
         # Implementation for improvement type determination
         return "optimization"
 
-    def _generate_improvement_description(self, pattern: LearningPattern) -> str:
-        """Generate improvement description"""
-        # Implementation for improvement description generation
-        return f"Improvement based on {pattern.pattern_type} pattern"
-
-    def _generate_proposed_changes(self, pattern: LearningPattern) -> Dict:
-        """Generate proposed changes"""
-        # Implementation for proposed changes generation
-        return {}
-
-    def _calculate_expected_impact(self, pattern: LearningPattern) -> Dict:
-        """Calculate expected impact"""
-        # Implementation for expected impact calculation
-        return {}
-
-    async def _improve_risk_analysis(self, improvement: SystemImprovement) -> bool:
+    async def _improve_risk_analysis(self, improvement: RecursiveImprovement) -> bool:
         """Apply improvement to risk analysis component"""
         # Implementation for risk analysis improvement
         return False
         
-    async def _improve_resource_management(self, improvement: SystemImprovement) -> bool:
+    async def _improve_resource_management(self, improvement: RecursiveImprovement) -> bool:
         """Apply improvement to resource management component"""
         # Implementation for resource management improvement
         return False
         
-    async def _improve_cost_estimation(self, improvement: SystemImprovement) -> bool:
+    async def _improve_cost_estimation(self, improvement: RecursiveImprovement) -> bool:
         """Apply improvement to cost estimation component"""
         # Implementation for cost estimation improvement
         return False
         
-    async def _improve_success_criteria(self, improvement: SystemImprovement) -> bool:
+    async def _improve_success_criteria(self, improvement: RecursiveImprovement) -> bool:
         """Apply improvement to success criteria component"""
         # Implementation for success criteria improvement
         return False
@@ -752,7 +788,7 @@ class MetaLearningService:
         
     async def _calculate_validation_score(
         self,
-        improvement: SystemImprovement,
+        improvement: RecursiveImprovement,
         performance_data: Dict
     ) -> float:
         """Calculate validation score for an improvement"""
@@ -763,6 +799,6 @@ class MetaLearningService:
         """Check service health"""
         return {
             "status": "healthy",
-            "pattern_count": len(self.patterns),
+            "pattern_count": len(self.observation_patterns),
             "improvement_count": len(self.improvements)
         } 

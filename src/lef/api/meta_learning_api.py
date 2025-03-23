@@ -1,19 +1,29 @@
 """
-API endpoints for meta-learning service
+Meta Learning API: Endpoints for recursive learning through observation.
+
+This API provides interfaces for:
+1. Observing system behavior and patterns
+2. Deriving and validating system truths
+3. Managing recursive improvements
+4. Analyzing governance effectiveness
 """
 
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from ..services.meta_learning_service import (
     MetaLearningService,
     LearningPattern,
-    SystemImprovement
+    SystemImprovement,
+    ObservationPattern,
+    SystemTruth,
+    RecursiveImprovement
 )
 from ..services.security_service import SecurityService
 from ..services.logging_service import LoggingService
+from ..auth import get_current_user, check_permissions
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +32,7 @@ meta_learning_service = MetaLearningService()
 security_service = SecurityService()
 logging_service = LoggingService()
 
-router = APIRouter()
+router = APIRouter(prefix="/meta-learning", tags=["Meta Learning"])
 
 class PerformanceAnalysisResponse(BaseModel):
     """Response model for system performance analysis"""
@@ -266,4 +276,54 @@ async def check_health(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
-        ) 
+        )
+
+@router.get("/observe", response_model=List[ObservationPattern])
+async def observe_system(
+    context: Dict[str, Any],
+    current_user: dict = Depends(get_current_user)
+) -> List[ObservationPattern]:
+    """Observe system behavior without intervention."""
+    check_permissions(current_user, "meta_learning.observe")
+    return await meta_learning_service.observe_system_behavior(context)
+
+@router.get("/truths", response_model=List[SystemTruth])
+async def get_system_truths(
+    current_user: dict = Depends(get_current_user)
+) -> List[SystemTruth]:
+    """Retrieve derived system truths."""
+    check_permissions(current_user, "meta_learning.read_truths")
+    return meta_learning_service.system_truths
+
+@router.post("/truths/validate/{truth_id}")
+async def validate_truth(
+    truth_id: str,
+    current_user: dict = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """Validate a derived system truth."""
+    check_permissions(current_user, "meta_learning.validate_truths")
+    return await meta_learning_service.validate_truth(truth_id)
+
+@router.get("/improvements", response_model=List[RecursiveImprovement])
+async def get_recursive_improvements(
+    current_user: dict = Depends(get_current_user)
+) -> List[RecursiveImprovement]:
+    """Retrieve proposed recursive improvements."""
+    check_permissions(current_user, "meta_learning.read_improvements")
+    return meta_learning_service.improvements
+
+@router.post("/improvements/analyze")
+async def analyze_recursive_impact(
+    current_user: dict = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """Analyze the recursive impact of improvements."""
+    check_permissions(current_user, "meta_learning.analyze_improvements")
+    return await meta_learning_service.analyze_recursive_impact()
+
+@router.get("/governance/effectiveness")
+async def analyze_governance(
+    current_user: dict = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """Analyze the effectiveness of observation-based governance."""
+    check_permissions(current_user, "meta_learning.analyze_governance")
+    return await meta_learning_service._analyze_governance_effectiveness() 
