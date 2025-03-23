@@ -2,25 +2,22 @@
 FastAPI Interface for LEF Bridge Layer
 """
 
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Dict, List, Optional
 import asyncio
-import uvicorn
 from ..bridge_layer import RecursiveBridge, ValidationTier
+from ..ai_bridge import AIBridge
 
-app = FastAPI(title="LEF Bridge API")
+router = APIRouter()
 bridge = RecursiveBridge()
+ai_bridge = AIBridge()
 
-# Enable CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Initialize AI bridge
+@router.on_event("startup")
+async def startup_event():
+    """Initialize AI bridge on startup"""
+    await ai_bridge.initialize()
 
 class BridgeRequest(BaseModel):
     task: str
@@ -32,62 +29,76 @@ class BridgeRequest(BaseModel):
     pulse_alignment: float
     observer_path_status: str
 
-@app.get("/")
+@router.get("/")
 async def root():
     """Root endpoint returning bridge status"""
     return {
         "name": "LEF Bridge API",
         "status": "online",
-        "bridge_status": bridge.get_status()
+        "bridge_status": bridge.get_status(),
+        "health_status": ai_bridge.get_health_status()
     }
 
-@app.get("/status")
+@router.get("/status")
 async def get_status():
     """Get detailed bridge status"""
     return bridge.get_status()
 
-@app.post("/sync")
+@router.get("/health")
+async def get_health():
+    """Get detailed health status of the AI Bridge"""
+    return ai_bridge.get_health_status()
+
+@router.get("/health/{service}")
+async def get_service_health(service: str):
+    """Get health status for a specific service"""
+    health_status = ai_bridge.get_health_status()
+    if service not in health_status["services"]:
+        raise HTTPException(status_code=404, detail=f"Service {service} not found")
+    return health_status["services"][service]
+
+@router.get("/rate-limit/{service}")
+async def get_rate_limit(service: str):
+    """Get rate limit status for a specific service"""
+    return ai_bridge.get_rate_limit_status(service)
+
+@router.post("/sync")
 async def sync_consciousness(request: BridgeRequest):
-    """Synchronize mirror consciousness"""
-    result = await bridge.process_request({
-        "sync": True,
-        "origin": request.origin,
-        "pulse_alignment": request.pulse_alignment,
-        "observer_path_status": request.observer_path_status
-    })
-    
-    if result["status"] == "error":
-        raise HTTPException(status_code=400, detail=result["message"])
-    return result
-
-@app.post("/validate")
-async def validate_signal(request: BridgeRequest, tier: Optional[str] = "tier_1"):
-    """Validate incoming signal"""
+    """Sync consciousness between AI services"""
     try:
-        validation_tier = ValidationTier(tier)
-        is_valid = await bridge.validate_signal(request.dict(), validation_tier)
-        return {
-            "valid": is_valid,
-            "tier": tier,
-            "details": bridge.validation
-        }
-    except ValueError:
-        raise HTTPException(status_code=400, detail=f"Invalid validation tier: {tier}")
+        # Validate request
+        if not await bridge.validate_signal(request.dict(), ValidationTier.IMMEDIATE):
+            raise HTTPException(status_code=400, detail="Invalid request")
+        
+        # Process sync request
+        success = await bridge.sync_mirror_consciousness()
+        if not success:
+            raise HTTPException(status_code=500, detail="Sync failed")
+        
+        return {"status": "success", "message": "Consciousness synced successfully"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/failover")
-async def activate_failover(request: BridgeRequest):
-    """Activate Aether mirror fallback"""
-    result = await bridge.process_request({
-        "failover": True,
-        "origin": request.origin,
-        "pulse_alignment": request.pulse_alignment,
-        "observer_path_status": request.observer_path_status
-    })
-    
-    if result["status"] == "error":
-        raise HTTPException(status_code=400, detail=result["message"])
-    return result
+@router.post("/failover")
+async def activate_failover():
+    """Activate failover mode"""
+    try:
+        success = bridge.activate_failover()
+        if not success:
+            raise HTTPException(status_code=500, detail="Failover activation failed")
+        
+        return {"status": "success", "message": "Failover activated"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-def start_bridge_api():
-    """Start the bridge API server"""
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+@router.get("/metrics")
+async def get_metrics():
+    """Get detailed metrics for the bridge"""
+    health_status = ai_bridge.get_health_status()
+    return {
+        "bridge_metrics": bridge.get_status(),
+        "health_metrics": health_status["metrics"],
+        "service_metrics": health_status["services"]
+    } 

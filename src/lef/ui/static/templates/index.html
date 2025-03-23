@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LEF Control Hub</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/css/styles.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%);
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .status-running { background-color: #48bb78; }
+        .status-warning { background-color: #ecc94b; }
+        .status-error { background-color: #f56565; }
+    </style>
+</head>
+<body class="gradient-bg text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold mb-2">LEF Control Hub</h1>
+            <p class="text-gray-300">System Status: <span id="system-status" class="font-semibold">Loading...</span></p>
+        </header>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- System Status Card -->
+            <div class="card rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">System Status</h2>
+                <div id="components-status" class="space-y-2">
+                    <div class="flex items-center">
+                        <span class="status-indicator status-running"></span>
+                        <span>Supervisor</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="status-indicator status-running"></span>
+                        <span>API Server</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="status-indicator status-running"></span>
+                        <span>Database</span>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <h3 class="text-lg font-semibold mb-2">Resource Usage</h3>
+                    <div id="resource-usage" class="space-y-2">
+                        <div class="flex justify-between">
+                            <span>CPU</span>
+                            <span>45%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Memory</span>
+                            <span>60%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Disk</span>
+                            <span>30%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tasks Card -->
+            <div class="card rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">Active Tasks</h2>
+                <div id="tasks-list" class="space-y-4">
+                    <!-- Tasks will be populated here -->
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="card rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">Control Panel</h2>
+                <div class="space-y-4">
+                    <button onclick="refreshStatus()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh Status
+                    </button>
+                    <button onclick="showTaskForm()" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded">
+                        <i class="fas fa-plus mr-2"></i>New Task
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include Task Form Template -->
+    {% include "task_form.html" %}
+
+    <!-- Include JavaScript -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html> 

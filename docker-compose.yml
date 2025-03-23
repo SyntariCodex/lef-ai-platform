@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  lef:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount source code for development
+      - ./src:/app/src
+      # Mount LEF data directory for persistence
+      - lef_data:/root/.lef
+    environment:
+      - LEF_ENV=development
+      - PYTHONPATH=/app
+    # Enable hot reload for development
+    command: python -m src.lef.supervisor --reload
+
+volumes:
+  lef_data:
+    # Named volume for LEF data persistence 

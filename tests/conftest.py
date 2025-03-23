@@ -1,60 +1,34 @@
 """
-Test configuration and fixtures
+Test configuration for the LEF system.
 """
 
+import os
 import pytest
-import pytest_asyncio
-from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
-from typing import AsyncGenerator, Generator
+from pathlib import Path
+from tempfile import mkdtemp
+from shutil import rmtree
 
-from src.lef.models.database import Base, get_db
-from src.lef.api import app
+@pytest.fixture(scope="session")
+def test_dir():
+    """Create a temporary directory for test data."""
+    temp_dir = mkdtemp()
+    yield temp_dir
+    rmtree(temp_dir)
 
-# Use SQLite in-memory database for testing
-TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
+@pytest.fixture(scope="session")
+def test_db_path(test_dir):
+    """Create a test database path."""
+    return Path(test_dir) / "test.db"
 
-@pytest_asyncio.fixture
-async def async_engine():
-    """Create a new database engine for each test."""
-    engine = create_async_engine(
-        TEST_DB_URL,
-        echo=False,
-        future=True
-    )
+@pytest.fixture(autouse=True)
+def setup_test_env(test_db_path):
+    """Set up test environment."""
+    # Set environment variables
+    os.environ["LEF_ENV"] = "test"
+    os.environ["LEF_DB_PATH"] = str(test_db_path)
     
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    yield
     
-    try:
-        yield engine
-    finally:
-        await engine.dispose()
-
-@pytest_asyncio.fixture
-async def async_session(async_engine) -> AsyncGenerator[AsyncSession, None]:
-    """Create a new database session for each test."""
-    async_session_maker = sessionmaker(
-        async_engine,
-        class_=AsyncSession,
-        expire_on_commit=False,
-        autoflush=False
-    )
-    
-    async with async_session_maker() as session:
-        yield session
-
-@pytest_asyncio.fixture
-async def client(async_session) -> Generator[TestClient, None, None]:
-    """Create a new FastAPI TestClient with the test database."""
-    
-    async def override_get_db():
-        yield async_session
-    
-    app.dependency_overrides[get_db] = override_get_db
-    
-    with TestClient(app) as test_client:
-        yield test_client
-    
-    app.dependency_overrides.clear() 
+    # Clean up
+    if test_db_path.exists():
+        test_db_path.unlink() 

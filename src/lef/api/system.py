@@ -1,133 +1,55 @@
 """
-System API endpoints for LEF system state and monitoring
+System API endpoints for the LEF system.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional
+import psutil
 from datetime import datetime
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException
+from typing import List, Optional
 
-from ..models import (
-    get_db,
-    SystemState,
-    SystemEvent,
-    EventType,
-    log_event,
-    update_component_state
-)
-from sqlalchemy import select, desc
+from ..models.system_state import SystemState
+from ..models.events import Event, EventType, EventSeverity
 
-router = APIRouter(prefix="/system", tags=["system"])
+router = APIRouter(prefix="/api/system", tags=["system"])
 
-# Pydantic models for API
-class ComponentStateUpdate(BaseModel):
-    status: str
-    process_id: Optional[int] = None
-    metadata: Optional[dict] = None
+@router.get("/status", response_model=SystemState)
+async def get_system_status():
+    """Get current system status."""
+    try:
+        process = psutil.Process()
+        memory_info = process.memory_info()
+        
+        return SystemState(
+            status="running",
+            version="1.0.0",
+            uptime=process.create_time(),
+            memory_usage=memory_info.rss / 1024 / 1024,  # Convert to MB
+            cpu_usage=process.cpu_percent(),
+            active_tasks=0,  # TODO: Implement task counting
+            completed_tasks=0,
+            failed_tasks=0,
+            system_metrics={
+                "threads": process.num_threads(),
+                "open_files": len(process.open_files()),
+                "connections": len(process.connections())
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-class ComponentStateResponse(BaseModel):
-    component_name: str
-    status: str
-    process_id: Optional[int]
-    metadata: dict
-    last_heartbeat: datetime
-    
-    class Config:
-        from_attributes = True
-
-class SystemEventResponse(BaseModel):
-    timestamp: datetime
-    event_type: str
-    component_name: str
-    process_id: Optional[int]
-    message: str
-    metadata: dict
-    
-    class Config:
-        from_attributes = True
-
-@router.get("/components", response_model=List[ComponentStateResponse])
-async def get_all_components(session: AsyncSession = Depends(get_db)):
-    """Get status of all system components"""
-    result = await session.execute(select(SystemState))
-    return result.scalars().all()
-
-@router.get("/components/{component_name}", response_model=ComponentStateResponse)
-async def get_component_state(component_name: str, session: AsyncSession = Depends(get_db)):
-    """Get status of a specific component"""
-    result = await session.execute(
-        select(SystemState).filter(SystemState.component_name == component_name)
-    )
-    component = result.scalar_one_or_none()
-    if not component:
-        raise HTTPException(status_code=404, detail="Component not found")
-    return component
-
-@router.put("/components/{component_name}", response_model=ComponentStateResponse)
-async def update_component(
-    component_name: str,
-    state: ComponentStateUpdate,
-    session: AsyncSession = Depends(get_db)
-):
-    """Update a component's state"""
-    component = await update_component_state(
-        session,
-        component_name,
-        state.status,
-        state.process_id,
-        state.metadata
-    )
-    
-    # Log the state change
-    await log_event(
-        session,
-        EventType.COMPONENT_STATE_CHANGE,
-        component_name,
-        f"Component state updated to {state.status}",
-        state.process_id,
-        state.metadata
-    )
-    
-    await session.commit()
-    return component
-
-@router.get("/events", response_model=List[SystemEventResponse])
+@router.get("/events", response_model=List[Event])
 async def get_system_events(
-    limit: int = 50,
-    component_name: Optional[str] = None,
-    event_type: Optional[str] = None,
-    session: AsyncSession = Depends(get_db)
+    event_type: Optional[EventType] = None,
+    severity: Optional[EventSeverity] = None,
+    limit: int = 50
 ):
-    """Get system events with optional filtering"""
-    query = select(SystemEvent).order_by(desc(SystemEvent.timestamp))
-    
-    if component_name:
-        query = query.filter(SystemEvent.component_name == component_name)
-    if event_type:
-        query = query.filter(SystemEvent.event_type == event_type)
-    
-    query = query.limit(limit)
-    result = await session.execute(query)
-    return result.scalars().all()
+    """Get system events with optional filtering."""
+    # TODO: Implement event storage and retrieval
+    return []
 
-@router.post("/events", response_model=SystemEventResponse)
-async def create_system_event(
-    event_type: EventType,
-    component_name: str,
-    message: str,
-    process_id: Optional[int] = None,
-    metadata: Optional[dict] = None,
-    session: AsyncSession = Depends(get_db)
-):
-    """Create a new system event"""
-    event = await log_event(
-        session,
-        event_type,
-        component_name,
-        message,
-        process_id,
-        metadata
-    )
-    await session.commit()
+@router.post("/events", response_model=Event)
+async def create_system_event(event: Event):
+    """Create a new system event."""
+    # TODO: Implement event storage
+    event.created_at = datetime.utcnow()
     return event 

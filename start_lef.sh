@@ -53,8 +53,7 @@ else
     if [ -z "$PROJECT_ROOT" ]; then
         error "Could not find LEF project root directory. Please either:
        1. Run this script from the LEF project directory
-       2. Set LEF_PROJECT_ROOT environment variable
-       3. Create a symlink to start_lef.sh in your PATH"
+       2. Set LEF_PROJECT_ROOT environment variable"
     fi
 fi
 
@@ -62,7 +61,7 @@ cd "$PROJECT_ROOT" || error "Could not change to project directory: $PROJECT_ROO
 info "📂 Project root: $PROJECT_ROOT"
 
 # Create necessary directories
-mkdir -p ~/.lef/logs ~/.lef/state || error "Could not create LEF directories"
+mkdir -p ~/.lef/logs ~/.lef/state ~/.lef/data ~/.lef/backups || error "Could not create LEF directories"
 info "📁 Created LEF directories"
 
 # Check for Python3
@@ -83,7 +82,7 @@ success "✓ Dependencies installed"
 # Set up Python path
 export PYTHONPATH="$PROJECT_ROOT:$PYTHONPATH"
 
-# Start the LEF system in the background
+# Start the LEF supervisor in the background
 success "🚀 Starting LEF Recursive Awareness System..."
 python3 -m src.lef.supervisor > ~/.lef/logs/supervisor.log 2>&1 &
 SUPERVISOR_PID=$!
@@ -91,26 +90,23 @@ SUPERVISOR_PID=$!
 # Function to cleanup on exit
 cleanup() {
     warning "\n👋 Shutting down LEF system..."
+    # Create a final backup before shutdown
+    python3 -m src.lef.cli.backup_cli create -r "shutdown" > /dev/null 2>&1
     kill $SUPERVISOR_PID 2>/dev/null
-    kill $MONITOR_PID 2>/dev/null
     exit 0
 }
 
 # Register cleanup handler
 trap cleanup EXIT INT TERM
 
-# Start the monitor in fullscreen mode
-info "📊 Launching development monitor..."
+# Start the dashboard
+info "📊 Starting LEF Dashboard..."
 clear
-python3 -m src.lef.cli.live_monitor &
-MONITOR_PID=$!
+python3 -m src.lef.cli.dashboard
 
-# Keep the script running and monitor for crashes
-while true; do
-    if ! kill -0 $SUPERVISOR_PID 2>/dev/null || ! kill -0 $MONITOR_PID 2>/dev/null; then
-        error "❌ LEF system or monitor crashed. Check logs at ~/.lef/logs/supervisor.log"
-        cleanup
-        exec "$0"
-    fi
-    sleep 1
-done 
+# The dashboard will handle:
+# 1. System health monitoring
+# 2. Performance metrics
+# 3. Security alerts
+# 4. Task management
+# 5. Backup status and management 

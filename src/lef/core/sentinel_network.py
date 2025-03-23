@@ -1,14 +1,18 @@
 import time
-import random
+import psutil
+import logging
+import asyncio
+import json
 from datetime import datetime
 from typing import Dict, List, Any
-import threading
+from pathlib import Path
 
 class SentinelNetwork:
     """Network of sentinels monitoring system health and security."""
     
     def __init__(self):
         """Initialize sentinel network."""
+        self.logger = logging.getLogger("lef.sentinel")
         self.running = False
         self.sentinels = {
             "health": {
@@ -27,74 +31,210 @@ class SentinelNetwork:
                 "metrics": {}
             }
         }
-        self.monitor_thread = None
         
-    def start(self) -> bool:
+        # Set up logging
+        log_dir = Path.home() / ".lef" / "logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        
+        file_handler = logging.FileHandler(log_dir / "sentinel.log")
+        file_handler.setFormatter(
+            logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        )
+        self.logger.addHandler(file_handler)
+        self.logger.setLevel(logging.DEBUG)
+        
+        # Initialize metrics history
+        self.metrics_history = []
+        self.max_history_size = 1000  # Keep last 1000 metrics points
+        
+    async def start(self) -> bool:
         """Start the sentinel network."""
         try:
             self.running = True
+            self.logger.info("Starting sentinel network")
             
-            # Start monitoring thread
-            self.monitor_thread = threading.Thread(target=self._monitor_loop)
-            self.monitor_thread.daemon = True
-            self.monitor_thread.start()
+            # Start monitoring tasks
+            asyncio.create_task(self._monitor_system_health())
+            asyncio.create_task(self._monitor_performance())
+            asyncio.create_task(self._monitor_security())
             
             # Activate all sentinels
             for sentinel in self.sentinels.values():
                 sentinel["status"] = "active"
                 sentinel["last_check"] = time.time()
             
-            print("Sentinel network started successfully")
+            self.logger.info("Sentinel network started successfully")
             return True
+            
         except Exception as e:
-            print(f"Error starting sentinel network: {str(e)}")
+            self.logger.error(f"Error starting sentinel network: {e}")
             return False
             
-    def stop(self):
+    async def stop(self):
         """Stop the sentinel network."""
         try:
             self.running = False
+            self.logger.info("Stopping sentinel network")
             
             # Deactivate all sentinels
             for sentinel in self.sentinels.values():
                 sentinel["status"] = "inactive"
-                
-            # Wait for monitor thread to stop
-            if self.monitor_thread and self.monitor_thread.is_alive():
-                self.monitor_thread.join(timeout=5.0)
             
-            print("Sentinel network stopped successfully")
+            self.logger.info("Sentinel network stopped successfully")
+            
         except Exception as e:
-            print(f"Error stopping sentinel network: {str(e)}")
+            self.logger.error(f"Error stopping sentinel network: {e}")
             
-    def _monitor_loop(self):
-        """Main monitoring loop."""
+    async def _monitor_system_health(self):
+        """Monitor system health metrics."""
         while self.running:
             try:
                 current_time = time.time()
                 
+                # Get system metrics
+                cpu_percent = psutil.cpu_percent(interval=1)
+                memory = psutil.virtual_memory()
+                disk = psutil.disk_usage('/')
+                
                 # Update health metrics
-                self.sentinels["health"]["metrics"] = {
-                    "last_check": current_time,
-                    "uptime": current_time - self.sentinels["health"]["last_check"]
-                        if self.sentinels["health"]["last_check"] else 0
+                metrics = {
+                    "timestamp": current_time,
+                    "cpu_usage": cpu_percent,
+                    "memory_usage": memory.percent,
+                    "disk_usage": disk.percent,
+                    "memory_available": memory.available / (1024 * 1024 * 1024),  # GB
+                    "disk_free": disk.free / (1024 * 1024 * 1024)  # GB
                 }
                 
-                # Update performance metrics
-                self.sentinels["performance"]["metrics"] = {
-                    "last_check": current_time,
-                    "response_time": 0.1  # Placeholder
-                }
+                self.sentinels["health"]["metrics"] = metrics
+                self.sentinels["health"]["last_check"] = current_time
                 
-                # Update security status
-                self.sentinels["security"]["last_check"] = current_time
+                # Add to history
+                self.metrics_history.append(metrics)
+                if len(self.metrics_history) > self.max_history_size:
+                    self.metrics_history.pop(0)
                 
-                time.sleep(1.0)  # Check every second
+                # Check thresholds and generate alerts
+                if cpu_percent > 80:
+                    await self._add_alert("High CPU usage detected", "warning", metrics)
+                if memory.percent > 85:
+                    await self._add_alert("High memory usage detected", "warning", metrics)
+                if disk.percent > 90:
+                    await self._add_alert("Low disk space", "critical", metrics)
+                
+                await asyncio.sleep(5)  # Check every 5 seconds
                 
             except Exception as e:
-                print(f"Error in monitor loop: {str(e)}")
-                time.sleep(1.0)
+                self.logger.error(f"Error in health monitoring: {e}")
+                await asyncio.sleep(5)
                 
+    async def _monitor_performance(self):
+        """Monitor performance metrics."""
+        while self.running:
+            try:
+                current_time = time.time()
+                
+                # Get detailed CPU stats
+                cpu_times = psutil.cpu_times_percent()
+                cpu_freq = psutil.cpu_freq()
+                
+                # Get IO stats
+                io_counters = psutil.disk_io_counters()
+                net_counters = psutil.net_io_counters()
+                
+                metrics = {
+                    "timestamp": current_time,
+                    "cpu": {
+                        "user": cpu_times.user,
+                        "system": cpu_times.system,
+                        "idle": cpu_times.idle,
+                        "frequency": cpu_freq.current if cpu_freq else 0
+                    },
+                    "io": {
+                        "read_bytes": io_counters.read_bytes,
+                        "write_bytes": io_counters.write_bytes,
+                        "read_time": io_counters.read_time,
+                        "write_time": io_counters.write_time
+                    },
+                    "network": {
+                        "bytes_sent": net_counters.bytes_sent,
+                        "bytes_recv": net_counters.bytes_recv,
+                        "packets_sent": net_counters.packets_sent,
+                        "packets_recv": net_counters.packets_recv
+                    }
+                }
+                
+                self.sentinels["performance"]["metrics"] = metrics
+                self.sentinels["performance"]["last_check"] = current_time
+                
+                await asyncio.sleep(10)  # Check every 10 seconds
+                
+            except Exception as e:
+                self.logger.error(f"Error in performance monitoring: {e}")
+                await asyncio.sleep(10)
+                
+    async def _monitor_security(self):
+        """Monitor security metrics."""
+        while self.running:
+            try:
+                current_time = time.time()
+                
+                # Get process information
+                processes = []
+                for proc in psutil.process_iter(['pid', 'name', 'username', 'cpu_percent']):
+                    try:
+                        pinfo = proc.info
+                        if pinfo['cpu_percent'] > 50:  # Track high CPU processes
+                            processes.append(pinfo)
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        pass
+                
+                # Get network connections
+                connections = []
+                for conn in psutil.net_connections():
+                    try:
+                        if conn.status == 'ESTABLISHED':
+                            connections.append({
+                                'local_addr': conn.laddr,
+                                'remote_addr': conn.raddr,
+                                'status': conn.status,
+                                'pid': conn.pid
+                            })
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        pass
+                
+                metrics = {
+                    "timestamp": current_time,
+                    "high_cpu_processes": processes,
+                    "active_connections": connections,
+                    "users": len(psutil.users())
+                }
+                
+                self.sentinels["security"]["metrics"] = metrics
+                self.sentinels["security"]["last_check"] = current_time
+                
+                await asyncio.sleep(15)  # Check every 15 seconds
+                
+            except Exception as e:
+                self.logger.error(f"Error in security monitoring: {e}")
+                await asyncio.sleep(15)
+                
+    async def _add_alert(self, message: str, level: str, data: Dict = None):
+        """Add a security alert."""
+        alert = {
+            "timestamp": time.time(),
+            "message": message,
+            "level": level,
+            "data": data
+        }
+        
+        self.sentinels["security"]["alerts"].append(alert)
+        self.logger.warning(f"Alert: {message} (Level: {level})")
+        
+        # Keep only last 100 alerts
+        if len(self.sentinels["security"]["alerts"]) > 100:
+            self.sentinels["security"]["alerts"].pop(0)
+            
     def get_status(self) -> Dict[str, Any]:
         """Get current sentinel network status."""
         return {
@@ -108,17 +248,6 @@ class SentinelNetwork:
             }
         }
         
-    def add_security_alert(self, alert: Dict[str, Any]):
-        """Add a security alert."""
-        if not self.running:
-            raise RuntimeError("Sentinel network is not running")
-            
-        try:
-            alert["timestamp"] = time.time()
-            self.sentinels["security"]["alerts"].append(alert)
-        except Exception as e:
-            print(f"Error adding security alert: {str(e)}")
-            
     def get_health_metrics(self) -> Dict[str, Any]:
         """Get current health metrics."""
         return self.sentinels["health"]["metrics"]
@@ -130,6 +259,10 @@ class SentinelNetwork:
     def get_security_alerts(self) -> List[Dict[str, Any]]:
         """Get list of security alerts."""
         return self.sentinels["security"]["alerts"]
+        
+    def get_metrics_history(self) -> List[Dict[str, Any]]:
+        """Get historical metrics."""
+        return self.metrics_history
 
 class SentinelPrime:
     """High-Level Oversight Sentinels (Primes)"""
