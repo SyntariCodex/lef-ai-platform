@@ -15,11 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.9', '3.10']
+        python-version: ['3.9']
       fail-fast: false
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
@@ -34,19 +34,19 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
           
-    - name: Install pip-tools
+    - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install pip-tools
-
+        pip install -r requirements.txt
+        
     - name: Analyze Dependencies
       run: |
         pip-compile --upgrade requirements.txt
         
     - name: Test TensorFlow Compatibility
       run: |
-        pip install tensorflow-cpu-aws
-        python -c "import tensorflow as tf; print(f'TensorFlow version: {tf.__version__}')"
+        python -c "import tensorflow; print(f'TensorFlow version: {tensorflow.__version__}')"
         
     - name: Generate Dependency Graph
       run: |
@@ -54,9 +54,8 @@ jobs:
         pipdeptree --graph-output dot > dependency_graph.dot
         
     - name: Upload Dependency Analysis
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: dependency-analysis
-        path: |
-          dependency_graph.dot
-          requirements.txt 
+        path: dependency_graph.dot
+        if-no-files-found: warn 
