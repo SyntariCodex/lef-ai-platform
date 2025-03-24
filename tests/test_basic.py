@@ -15,9 +15,12 @@ def test_python_environment():
     import sys
     import numpy
     import pandas
-    import tensorflow
+    try:
+        import tensorflow.keras  # More specific import to verify TensorFlow setup
+        print(f"TensorFlow version: {tensorflow.version.VERSION}")
+    except ImportError as e:
+        pytest.fail(f"TensorFlow import failed: {e}")
     
     assert sys.version_info >= (3, 9)
-    assert numpy.__version__
-    assert pandas.__version__
-    assert tensorflow.__version__ 
+    assert numpy.__version__, "NumPy version should be available"
+    assert pandas.__version__, "Pandas version should be available" 
