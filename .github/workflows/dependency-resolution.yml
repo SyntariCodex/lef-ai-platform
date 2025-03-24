@@ -1,0 +1,62 @@
+name: Dependency Resolution
+
+on:
+  push:
+    paths:
+      - 'requirements.txt'
+      - '.github/workflows/dependency-resolution.yml'
+  pull_request:
+    paths:
+      - 'requirements.txt'
+  workflow_dispatch:
+
+jobs:
+  resolve-dependencies:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10']
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install pip-tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install pip-tools
+
+    - name: Analyze Dependencies
+      run: |
+        pip-compile --upgrade requirements.txt
+        
+    - name: Test TensorFlow Compatibility
+      run: |
+        pip install tensorflow-cpu-aws
+        python -c "import tensorflow as tf; print(f'TensorFlow version: {tf.__version__}')"
+        
+    - name: Generate Dependency Graph
+      run: |
+        pip install pipdeptree
+        pipdeptree --graph-output dot > dependency_graph.dot
+        
+    - name: Upload Dependency Analysis
+      uses: actions/upload-artifact@v3
+      with:
+        name: dependency-analysis
+        path: |
+          dependency_graph.dot
+          requirements.txt 
