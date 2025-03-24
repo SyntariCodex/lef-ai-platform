@@ -1,0 +1,36 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'lef_core'
+    static_configs:
+      - targets: ['lef_core:8000']
+    metrics_path: '/metrics'
+
+  - job_name: 'docker'
+    static_configs:
+      - targets: ['localhost:9323']
+
+  - job_name: 'observer_ring'
+    static_configs:
+      - targets: ['observer_ring:8080']
+    metrics_path: '/metrics'
+
+  - job_name: 'truth_derivation'
+    static_configs:
+      - targets: ['truth_derivation:8081']
+    metrics_path: '/metrics'
+
+  - job_name: 'mirror_layer'
+    static_configs:
+      - targets: ['mirror_layer:8082']
+    metrics_path: '/metrics'
+
+  - job_name: 'consciousness'
+    static_configs:
+      - targets: ['consciousness:8083']
+    metrics_path: '/metrics'
+
+rule_files:
+  - 'alert.rules.yml' 

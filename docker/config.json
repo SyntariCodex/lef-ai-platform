@@ -1,0 +1,27 @@
+{
+  "builder": {
+    "gc": {
+      "defaultKeepStorage": "20GB",
+      "enabled": true
+    }
+  },
+  "experimental": false,
+  "features": {
+    "buildkit": true
+  },
+  "resources": {
+    "memory": "4GB",
+    "cpu-shares": 1024
+  },
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  },
+  "storage-driver": "overlay2",
+  "storage-opts": [
+    "overlay2.size=20GB"
+  ],
+  "metrics-addr": "127.0.0.1:9323",
+  "debug": false
+} 

@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from pydantic import BaseModel, Field
 from collections import defaultdict
+import boto3
+from botocore.exceptions import ClientError
 
 from ..models.system_state import SystemState, ComponentStatus
 from ..models.bridge_status import BridgeStatus
@@ -15,11 +17,18 @@ from ..services.alert_service import AlertService, AlertSeverity
 
 logger = logging.getLogger(__name__)
 
+class CloudWatchConfig(BaseModel):
+    """CloudWatch configuration"""
+    namespace: str = "LEF"
+    region: str = "us-east-1"
+    enabled: bool = True
+
 class MetricPoint(BaseModel):
     """Single metric data point"""
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     value: float
     labels: Dict[str, str] = Field(default_factory=dict)
+    unit: str = "None"
 
 class Metric(BaseModel):
     """Metric definition"""
@@ -28,6 +37,8 @@ class Metric(BaseModel):
     type: str  # gauge, counter, histogram
     points: List[MetricPoint] = Field(default_factory=list)
     labels: Dict[str, str] = Field(default_factory=dict)
+    cloudwatch_unit: str = "None"
+    cloudwatch_dimensions: List[Dict[str, str]] = Field(default_factory=list)
 
 class HealthCheck(BaseModel):
     """Health check definition"""
@@ -38,17 +49,32 @@ class HealthCheck(BaseModel):
     last_check: Optional[datetime] = None
     error: Optional[str] = None
     details: Dict[str, Any] = Field(default_factory=dict)
+    threshold: float = 0.8  # Health threshold (0-1)
 
 class MonitoringService:
     """Service for monitoring system metrics and health"""
     
-    def __init__(self):
+    def __init__(self, cloudwatch_config: Optional[CloudWatchConfig] = None):
         self.metrics: Dict[str, Metric] = {}
         self.health_checks: Dict[str, HealthCheck] = {}
         self.alert_service = AlertService()
         self._collection_task: Optional[asyncio.Task] = None
         self._shutdown_event = asyncio.Event()
+        self.cloudwatch_config = cloudwatch_config or CloudWatchConfig()
+        self.cloudwatch_client = None
+        if self.cloudwatch_config.enabled:
+            self._init_cloudwatch()
         
+    def _init_cloudwatch(self):
+        """Initialize CloudWatch client"""
+        try:
+            self.cloudwatch_client = boto3.client(
+                'cloudwatch',
+                region_name=self.cloudwatch_config.region
+            )
+        except Exception as e:
+            logger.error(f"Failed to initialize CloudWatch client: {e}")
+            
     async def start(self):
         """Start the monitoring service"""
         try:
@@ -148,6 +174,9 @@ class MonitoringService:
                 # Run health checks
                 await self._run_health_checks()
                 
+                # Publish to CloudWatch
+                await self._publish_metrics_to_cloudwatch()
+                
                 # Clean up old metrics
                 await self._cleanup_old_metrics()
                 
@@ -179,8 +208,45 @@ class MonitoringService:
             
     async def _collect_service_metrics(self):
         """Collect service-level metrics"""
-        # TODO: Implement service-specific metric collection
-        pass
+        try:
+            # Bridge metrics
+            bridge_metrics = await self._get_bridge_metrics()
+            for name, value in bridge_metrics.items():
+                self._record_metric(
+                    name,
+                    value,
+                    labels={"service": "bridge"},
+                    unit="Count"
+                )
+                
+            # Service latency metrics
+            latency_metrics = await self._get_service_latency()
+            for service, latency in latency_metrics.items():
+                self._record_metric(
+                    "service_latency",
+                    latency,
+                    labels={"service": service},
+                    unit="Milliseconds"
+                )
+                
+        except Exception as e:
+            logger.error(f"Error collecting service metrics: {e}")
+            
+    async def _get_bridge_metrics(self) -> Dict[str, float]:
+        """Get bridge-specific metrics"""
+        return {
+            "active_connections": len(self.bridge.connections),
+            "message_queue_size": self.bridge.message_queue.qsize(),
+            "messages_processed": self.bridge.metrics.get("messages_processed", 0),
+            "errors": self.bridge.metrics.get("errors", 0)
+        }
+        
+    async def _get_service_latency(self) -> Dict[str, float]:
+        """Get service latency metrics"""
+        return {
+            service: metrics.get("latency", 0.0)
+            for service, metrics in self.bridge.metrics.items()
+        }
         
     async def _run_health_checks(self):
         """Run system health checks"""
@@ -230,15 +296,23 @@ class MonitoringService:
             "disk_usage": psutil.disk_usage('/').percent
         }
         
-    def _record_metric(self, name: str, value: float, labels: Optional[Dict[str, str]] = None):
+    def _record_metric(self, name: str, value: float, labels: Optional[Dict[str, str]] = None, unit: str = "None"):
         """Record a metric value"""
         if name not in self.metrics:
             logger.warning(f"Unknown metric: {name}")
             return
             
         metric = self.metrics[name]
-        point = MetricPoint(value=value, labels=labels or {})
+        point = MetricPoint(value=value, labels=labels or {}, unit=unit)
         metric.points.append(point)
+        
+        # Check thresholds and create alerts if needed
+        if value > metric.threshold:
+            self.alert_service.create_alert(
+                title=f"Metric Threshold Exceeded: {name}",
+                message=f"Metric {name} exceeded threshold of {metric.threshold}",
+                severity=AlertSeverity.WARNING
+            )
         
     def _update_health_check(self, name: str, details: Dict[str, Any]):
         """Update health check status"""
@@ -261,6 +335,37 @@ class MonitoringService:
                 message=f"Health check {name} reported unhealthy status",
                 severity=AlertSeverity.WARNING
             )
+            
+    async def _publish_metrics_to_cloudwatch(self):
+        """Publish metrics to CloudWatch"""
+        if not self.cloudwatch_client:
+            return
+            
+        try:
+            for metric_name, metric in self.metrics.items():
+                if not metric.points:
+                    continue
+                    
+                for point in metric.points:
+                    dimensions = [
+                        {"Name": k, "Value": str(v)}
+                        for k, v in metric.cloudwatch_dimensions[0].items()
+                    ] if metric.cloudwatch_dimensions else []
+                    
+                    self.cloudwatch_client.put_metric_data(
+                        Namespace=self.cloudwatch_config.namespace,
+                        MetricData=[
+                            {
+                                "MetricName": metric_name,
+                                "Value": point.value,
+                                "Unit": metric.cloudwatch_unit,
+                                "Dimensions": dimensions,
+                                "Timestamp": point.timestamp
+                            }
+                        ]
+                    )
+        except ClientError as e:
+            logger.error(f"Failed to publish metrics to CloudWatch: {e}")
             
     async def _cleanup_old_metrics(self):
         """Clean up old metric data"""

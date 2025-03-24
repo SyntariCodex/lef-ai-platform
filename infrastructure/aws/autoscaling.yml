@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'LEF AI Auto Scaling Configuration'
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: development
+    AllowedValues: 
+      - development
+      - staging
+      - production
+    Description: Environment name for the deployment
+
+Resources:
+  BuildCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub ${EnvironmentName}-lef-build-cluster
+      CapacityProviders:
+        - FARGATE
+        - FARGATE_SPOT
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: FARGATE
+          Weight: 1
+          Base: 1
+        - CapacityProvider: FARGATE_SPOT
+          Weight: 4
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Sub ${EnvironmentName}-lef-build-asg
+      MinSize: 1
+      MaxSize: 10
+      DesiredCapacity: 1
+      HealthCheckType: ELB
+      HealthCheckGracePeriod: 300
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-lef-build
+          PropagateAtLaunch: true
+
+  ScalingPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: 70.0
+
+  BuildQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${EnvironmentName}-lef-build-queue
+      VisibilityTimeout: 900
+      MessageRetentionPeriod: 1209600
+
+Outputs:
+  ClusterName:
+    Description: The name of the ECS cluster
+    Value: !Ref BuildCluster
+    Export:
+      Name: !Sub ${EnvironmentName}-BuildClusterName
+
+  AutoScalingGroupName:
+    Description: The name of the Auto Scaling Group
+    Value: !Ref AutoScalingGroup
+    Export:
+      Name: !Sub ${EnvironmentName}-BuildASGName
+
+  BuildQueueUrl:
+    Description: URL of the Build Queue
+    Value: !Ref BuildQueue
+    Export:
+      Name: !Sub ${EnvironmentName}-BuildQueueUrl 

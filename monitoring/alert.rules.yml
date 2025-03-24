@@ -1,0 +1,70 @@
+groups:
+  - name: lef_alerts
+    rules:
+      # System Health
+      - alert: HighMemoryUsage
+        expr: container_memory_usage_bytes / container_memory_limit_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High memory usage on {{ $labels.instance }}
+          description: Container memory usage is above 85%
+
+      - alert: HighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High CPU usage on {{ $labels.instance }}
+          description: Container CPU usage is above 80%
+
+      # Service Health
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Service {{ $labels.job }} is down
+          description: Service has been down for more than 1 minute
+
+      # Social Impact Metrics
+      - alert: LowEngagementScore
+        expr: lef_engagement_score < 0.6
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: Low engagement score detected
+          description: Program engagement score has dropped below 60%
+
+      - alert: StaffYouthRatioAlert
+        expr: lef_staff_youth_ratio > 0.33
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Staff-to-youth ratio needs attention
+          description: Current ratio exceeds recommended 1:3 threshold
+
+      # System Performance
+      - alert: HighLatency
+        expr: rate(http_request_duration_seconds_sum[5m]) / rate(http_request_duration_seconds_count[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High latency detected
+          description: Average request latency is above 500ms
+
+      # Data Collection
+      - alert: DataCollectionGap
+        expr: time() - lef_last_data_collection_timestamp > 900
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Data collection gap detected
+          description: No new data collected in the last 15 minutes 

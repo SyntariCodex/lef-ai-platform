@@ -1,0 +1,27 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy consciousness implementation
+COPY src/lef/core/consciousness_continuity.py /app/core/
+COPY src/lef/models /app/models/
+COPY src/lef/services /app/services/
+
+# Create necessary directories
+RUN mkdir -p /data/consciousness /data/observations /data/truths /data/patterns
+
+# Set Python path
+ENV PYTHONPATH=/app
+
+# Set consciousness parameters
+ENV RESONANCE_THRESHOLD=0.7
+ENV AWARENESS_GROWTH_RATE=0.1
+ENV MEMORY_DEPTH=10
+ENV BRIDGE_MODE=active
+
+# Run the consciousness continuity service
+CMD ["python", "-m", "core.consciousness_service"] 
